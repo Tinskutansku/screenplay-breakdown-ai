@@ -25,29 +25,30 @@ function App() {
   const [expandedSceneIds, setExpandedSceneIds] = useState<string[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState<string>("")
+
+  const fetchScenes = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch("http://localhost:8000/scenes")
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setScenes(data)
+    } catch (err) {
+      console.error("Error fetching scenes:", err)
+      setError("Failed to load scenes. Please check that the backend is running.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchScenes = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const response = await fetch("http://localhost:8000/scenes")
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setScenes(data)
-      } catch (err) {
-        console.error("Error fetching scenes:", err)
-        setError("Failed to load scenes. Please check that the backend is running.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchScenes()
   }, [])
 
@@ -64,12 +65,18 @@ function App() {
   }
 
   const openAllScenes = () => {
-    const allSceneIds = scenes.map((scene) => scene.scene_number)
-    setExpandedSceneIds(allSceneIds)
+    const visibleSceneIds = filteredScenes.map((scene) => scene.scene_number)
+    setExpandedSceneIds((currentExpandedSceneIds) => {
+      const mergedIds = new Set([...currentExpandedSceneIds, ...visibleSceneIds])
+      return Array.from(mergedIds)
+    })
   }
 
   const closeAllScenes = () => {
-    setExpandedSceneIds([])
+    const visibleSceneIds = filteredScenes.map((scene) => scene.scene_number)
+    setExpandedSceneIds((currentExpandedSceneIds) =>
+      currentExpandedSceneIds.filter((id) => !visibleSceneIds.includes(id))
+    )
   }
 
   const renderList = (items: string[]) => {
@@ -79,6 +86,42 @@ function App() {
 
     return items.join(", ")
   }
+
+  const sceneMatchesSearch = (scene: Scene, normalizedSearchTerm: string) => {
+    if (normalizedSearchTerm === "") {
+      return true
+    }
+
+    const searchableValues = [
+      scene.scene_number,
+      scene.int_ext,
+      scene.location,
+      scene.time_of_day,
+      scene.description,
+      ...scene.cast_members,
+      ...scene.background_actors,
+      ...scene.set_dressing,
+      ...scene.props,
+      ...scene.sound,
+      ...scene.wardrobe,
+      ...scene.makeup_hair,
+      ...scene.vehicles,
+      ...scene.stunts,
+      ...scene.sfx,
+      ...scene.vfx,
+      ...scene.notes,
+    ]
+
+    return searchableValues.some((value) =>
+      value.toLowerCase().includes(normalizedSearchTerm)
+    )
+  }
+
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+
+  const filteredScenes = scenes.filter((scene) =>
+    sceneMatchesSearch(scene, normalizedSearchTerm)
+  )
 
   if (loading) {
     return (
@@ -93,6 +136,13 @@ function App() {
     return (
       <div style={pageStyle}>
         <h1>Film AI Breakdown</h1>
+
+        <div style={topBarStyle}>
+          <button style={buttonStyle} onClick={fetchScenes}>
+            Retry
+          </button>
+        </div>
+
         <p style={errorTextStyle}>{error}</p>
       </div>
     )
@@ -102,14 +152,31 @@ function App() {
     <div style={pageStyle}>
       <h1>Film AI Breakdown</h1>
 
-      <div style={buttonContainerStyle}>
+      <div style={topBarStyle}>
+        <input
+          type="text"
+          placeholder="Search scenes..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          style={searchInputStyle}
+        />
+
+        <button style={buttonStyle} onClick={fetchScenes}>
+          Refresh
+        </button>
+
         <button style={buttonStyle} onClick={openAllScenes}>
           Open all
         </button>
+
         <button style={buttonStyle} onClick={closeAllScenes}>
           Close all
         </button>
       </div>
+
+      <p style={resultCountStyle}>
+        Showing {filteredScenes.length} of {scenes.length} scenes
+      </p>
 
       <table style={tableStyle}>
         <thead>
@@ -124,7 +191,7 @@ function App() {
         </thead>
 
         <tbody>
-          {scenes.map((scene) => {
+          {filteredScenes.map((scene) => {
             const isExpanded = expandedSceneIds.includes(scene.scene_number)
 
             return (
@@ -207,10 +274,11 @@ const pageStyle = {
   fontFamily: "Arial, sans-serif",
 }
 
-const buttonContainerStyle = {
+const topBarStyle = {
   display: "flex",
   gap: "12px",
   marginBottom: "20px",
+  flexWrap: "wrap" as const,
 }
 
 const buttonStyle = {
@@ -220,6 +288,18 @@ const buttonStyle = {
   cursor: "pointer",
   borderRadius: "6px",
   fontSize: "14px",
+}
+
+const searchInputStyle = {
+  padding: "10px 12px",
+  border: "1px solid #ccc",
+  borderRadius: "6px",
+  fontSize: "14px",
+  minWidth: "240px",
+}
+
+const resultCountStyle = {
+  marginBottom: "12px",
 }
 
 const tableStyle = {
