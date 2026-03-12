@@ -182,20 +182,24 @@ function App() {
           Parse screenplay
         </button>
 <div style={{ marginTop: 20 }}>
-  <h3>Or upload a .txt screenplay file</h3>
+  <h3>Or upload a screenplay file (.txt or .fdx)</h3>
 
   <input
     type="file"
-    accept=".txt"
+    accept=".txt, .fdx"
     onChange={(event) => {
       const file = event.target.files?.[0] || null
       setSelectedFile(file)
     }}
   />
 
+  {selectedFile && (
+  <p>Selected file: {selectedFile.name}</p>
+) }
+
   <div style={{ marginTop: 10 }}>
     <button onClick={uploadScriptFile}>
-      Upload .txt file
+      Upload file
     </button>
   </div>
 </div>
