@@ -26,6 +26,7 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>("")
+  const [scriptText, setScriptText] = useState<string>("")
 
   const fetchScenes = async () => {
     try {
@@ -35,14 +36,44 @@ function App() {
       const response = await fetch("http://localhost:8000/scenes")
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`)
+        throw new Error("Failed to fetch scenes")
       }
 
       const data = await response.json()
       setScenes(data)
-    } catch (err) {
-      console.error("Error fetching scenes:", err)
-      setError("Failed to load scenes. Please check that the backend is running.")
+    } catch {
+      setError("Failed to load scenes")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const parseScript = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch("http://localhost:8000/parse-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          script_text: scriptText
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Parsing failed")
+      }
+
+      const parsedScenes = await response.json()
+
+      setScenes(parsedScenes)
+      setExpandedSceneIds([])
+
+    } catch {
+      setError("Failed to parse screenplay")
     } finally {
       setLoading(false)
     }
@@ -53,81 +84,38 @@ function App() {
   }, [])
 
   const toggleSceneDetails = (sceneNumber: string) => {
-    setExpandedSceneIds((currentExpandedSceneIds) => {
-      const isAlreadyExpanded = currentExpandedSceneIds.includes(sceneNumber)
-
-      if (isAlreadyExpanded) {
-        return currentExpandedSceneIds.filter((id) => id !== sceneNumber)
+    setExpandedSceneIds((current) => {
+      if (current.includes(sceneNumber)) {
+        return current.filter((id) => id !== sceneNumber)
       }
-
-      return [...currentExpandedSceneIds, sceneNumber]
+      return [...current, sceneNumber]
     })
   }
 
   const openAllScenes = () => {
-    const visibleSceneIds = filteredScenes.map((scene) => scene.scene_number)
-    setExpandedSceneIds((currentExpandedSceneIds) => {
-      const mergedIds = new Set([...currentExpandedSceneIds, ...visibleSceneIds])
-      return Array.from(mergedIds)
-    })
+    const ids = filteredScenes.map((s) => s.scene_number)
+    setExpandedSceneIds(ids)
   }
 
   const closeAllScenes = () => {
-    const visibleSceneIds = filteredScenes.map((scene) => scene.scene_number)
-    setExpandedSceneIds((currentExpandedSceneIds) =>
-      currentExpandedSceneIds.filter((id) => !visibleSceneIds.includes(id))
-    )
+    setExpandedSceneIds([])
   }
 
   const renderList = (items: string[]) => {
-    if (!items || items.length === 0) {
-      return "—"
-    }
-
+    if (!items || items.length === 0) return "—"
     return items.join(", ")
   }
 
-  const sceneMatchesSearch = (scene: Scene, normalizedSearchTerm: string) => {
-    if (normalizedSearchTerm === "") {
-      return true
-    }
-
-    const searchableValues = [
-      scene.scene_number,
-      scene.int_ext,
-      scene.location,
-      scene.time_of_day,
-      scene.description,
-      ...scene.cast_members,
-      ...scene.background_actors,
-      ...scene.set_dressing,
-      ...scene.props,
-      ...scene.sound,
-      ...scene.wardrobe,
-      ...scene.makeup_hair,
-      ...scene.vehicles,
-      ...scene.stunts,
-      ...scene.sfx,
-      ...scene.vfx,
-      ...scene.notes,
-    ]
-
-    return searchableValues.some((value) =>
-      value.toLowerCase().includes(normalizedSearchTerm)
-    )
-  }
-
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
-
-  const filteredScenes = scenes.filter((scene) =>
-    sceneMatchesSearch(scene, normalizedSearchTerm)
-  )
+  const filteredScenes = scenes.filter((scene) => {
+    const text = JSON.stringify(scene).toLowerCase()
+    return text.includes(searchTerm.toLowerCase())
+  })
 
   if (loading) {
     return (
       <div style={pageStyle}>
         <h1>Film AI Breakdown</h1>
-        <p>Loading scenes...</p>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -136,14 +124,8 @@ function App() {
     return (
       <div style={pageStyle}>
         <h1>Film AI Breakdown</h1>
-
-        <div style={topBarStyle}>
-          <button style={buttonStyle} onClick={fetchScenes}>
-            Retry
-          </button>
-        </div>
-
-        <p style={errorTextStyle}>{error}</p>
+        <p style={{ color: "red" }}>{error}</p>
+        <button onClick={fetchScenes}>Retry</button>
       </div>
     )
   }
@@ -152,31 +134,35 @@ function App() {
     <div style={pageStyle}>
       <h1>Film AI Breakdown</h1>
 
-      <div style={topBarStyle}>
+      <div style={{ marginBottom: 30 }}>
+        <h3>Paste screenplay text</h3>
+
+        <textarea
+          value={scriptText}
+          onChange={(e) => setScriptText(e.target.value)}
+          rows={10}
+          style={{ width: "100%", marginBottom: 10 }}
+          placeholder="Paste screenplay here..."
+        />
+
+        <button onClick={parseScript}>
+          Parse screenplay
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
         <input
           type="text"
           placeholder="Search scenes..."
           value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          style={searchInputStyle}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ marginRight: 10 }}
         />
 
-        <button style={buttonStyle} onClick={fetchScenes}>
-          Refresh
-        </button>
-
-        <button style={buttonStyle} onClick={openAllScenes}>
-          Open all
-        </button>
-
-        <button style={buttonStyle} onClick={closeAllScenes}>
-          Close all
-        </button>
+        <button onClick={fetchScenes}>Refresh</button>
+        <button onClick={openAllScenes}>Open all</button>
+        <button onClick={closeAllScenes}>Close all</button>
       </div>
-
-      <p style={resultCountStyle}>
-        Showing {filteredScenes.length} of {scenes.length} scenes
-      </p>
 
       <table style={tableStyle}>
         <thead>
@@ -200,7 +186,7 @@ function App() {
                   onClick={() => toggleSceneDetails(scene.scene_number)}
                   style={{
                     cursor: "pointer",
-                    backgroundColor: isExpanded ? "#f5f5f5" : "white",
+                    backgroundColor: isExpanded ? "#f5f5f5" : "white"
                   }}
                 >
                   <td style={cell}>
@@ -215,47 +201,18 @@ function App() {
 
                 {isExpanded && (
                   <tr>
-                    <td style={detailCell} colSpan={6}>
+                    <td colSpan={6} style={detailCell}>
                       <div style={detailBox}>
-                        <h3 style={{ marginTop: 0 }}>
-                          Scene {scene.scene_number} Details
-                        </h3>
-
-                        <p>
-                          <strong>Background actors:</strong>{" "}
-                          {renderList(scene.background_actors)}
-                        </p>
-                        <p>
-                          <strong>Set dressing:</strong>{" "}
-                          {renderList(scene.set_dressing)}
-                        </p>
-                        <p>
-                          <strong>Props:</strong> {renderList(scene.props)}
-                        </p>
-                        <p>
-                          <strong>Wardrobe:</strong>{" "}
-                          {renderList(scene.wardrobe)}
-                        </p>
-                        <p>
-                          <strong>Makeup/Hair:</strong>{" "}
-                          {renderList(scene.makeup_hair)}
-                        </p>
-                        <p>
-                          <strong>Vehicles:</strong>{" "}
-                          {renderList(scene.vehicles)}
-                        </p>
-                        <p>
-                          <strong>Stunts:</strong> {renderList(scene.stunts)}
-                        </p>
-                        <p>
-                          <strong>SFX:</strong> {renderList(scene.sfx)}
-                        </p>
-                        <p>
-                          <strong>VFX:</strong> {renderList(scene.vfx)}
-                        </p>
-                        <p>
-                          <strong>Notes:</strong> {renderList(scene.notes)}
-                        </p>
+                        <p><strong>Background actors:</strong> {renderList(scene.background_actors)}</p>
+                        <p><strong>Set dressing:</strong> {renderList(scene.set_dressing)}</p>
+                        <p><strong>Props:</strong> {renderList(scene.props)}</p>
+                        <p><strong>Wardrobe:</strong> {renderList(scene.wardrobe)}</p>
+                        <p><strong>Makeup/Hair:</strong> {renderList(scene.makeup_hair)}</p>
+                        <p><strong>Vehicles:</strong> {renderList(scene.vehicles)}</p>
+                        <p><strong>Stunts:</strong> {renderList(scene.stunts)}</p>
+                        <p><strong>SFX:</strong> {renderList(scene.sfx)}</p>
+                        <p><strong>VFX:</strong> {renderList(scene.vfx)}</p>
+                        <p><strong>Notes:</strong> {renderList(scene.notes)}</p>
                       </div>
                     </td>
                   </tr>
@@ -271,62 +228,27 @@ function App() {
 
 const pageStyle = {
   padding: "40px",
-  fontFamily: "Arial, sans-serif",
-}
-
-const topBarStyle = {
-  display: "flex",
-  gap: "12px",
-  marginBottom: "20px",
-  flexWrap: "wrap" as const,
-}
-
-const buttonStyle = {
-  padding: "10px 16px",
-  border: "1px solid #ccc",
-  backgroundColor: "#f5f5f5",
-  cursor: "pointer",
-  borderRadius: "6px",
-  fontSize: "14px",
-}
-
-const searchInputStyle = {
-  padding: "10px 12px",
-  border: "1px solid #ccc",
-  borderRadius: "6px",
-  fontSize: "14px",
-  minWidth: "240px",
-}
-
-const resultCountStyle = {
-  marginBottom: "12px",
+  fontFamily: "Arial"
 }
 
 const tableStyle = {
   borderCollapse: "collapse" as const,
-  width: "100%",
+  width: "100%"
 }
 
 const cell = {
   border: "1px solid #ccc",
-  padding: "8px",
-  verticalAlign: "top" as const,
-  textAlign: "left" as const,
+  padding: "8px"
 }
 
 const detailCell = {
   border: "1px solid #ccc",
-  padding: "0",
+  padding: "0"
 }
 
 const detailBox = {
   padding: "16px",
-  backgroundColor: "#fafafa",
-}
-
-const errorTextStyle = {
-  color: "#b00020",
-  fontWeight: "bold" as const,
+  backgroundColor: "#fafafa"
 }
 
 export default App
