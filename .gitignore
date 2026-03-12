@@ -1,0 +1,19 @@
+# Python
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Environment files
+.env
+*.env
+
+# Node / React
+frontend/frontend/node_modules/
+frontend/frontend/dist/
+frontend/frontend/.vite/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/settings.json
