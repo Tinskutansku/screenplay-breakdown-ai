@@ -144,6 +144,28 @@ function App() {
     return text.includes(searchTerm.toLowerCase())
   })
 
+  const uniqueLocations = new Set(
+  scenes
+    .map((scene) => scene.location.trim())
+    .filter((location) => location !== "")
+)
+
+const uniqueCharacters = new Set(
+  scenes.flatMap((scene) => scene.cast_members)
+)
+
+const characterAppearances: Record<string, number> = {}
+
+scenes.forEach((scene) => {
+  scene.cast_members.forEach((character) => {
+    characterAppearances[character] = (characterAppearances[character] || 0) + 1
+  })
+})
+
+const sortedCharacterAppearances = Object.entries(characterAppearances).sort(
+  (a, b) => b[1] - a[1]
+)
+
   if (loading) {
     return (
       <div style={pageStyle}>
@@ -278,6 +300,30 @@ function App() {
           })}
         </tbody>
       </table>
+
+    <div style={statsBoxStyle}>
+  <h3>Scene Statistics</h3>
+
+  <p><strong>Total scenes:</strong> {scenes.length}</p>
+  <p><strong>Visible scenes:</strong> {filteredScenes.length}</p>
+  <p><strong>Unique locations:</strong> {uniqueLocations.size}</p>
+  <p><strong>Unique characters:</strong> {uniqueCharacters.size}</p>
+
+  <h4>Character appearances</h4>
+
+  {sortedCharacterAppearances.length === 0 ? (
+    <p>—</p>
+  ) : (
+    <ul style={statsListStyle}>
+      {sortedCharacterAppearances.map(([character, count]) => (
+        <li key={character}>
+          {character}: {count} scene{count !== 1 ? "s" : ""}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
     </div>
   )
 }
@@ -305,6 +351,18 @@ const detailCell = {
 const detailBox = {
   padding: "16px",
   backgroundColor: "#fafafa"
+}
+
+const statsBoxStyle = {
+  marginTop: "30px",
+  padding: "16px",
+  border: "1px solid #ccc",
+  backgroundColor: "#fafafa",
+}
+
+const statsListStyle = {
+  marginTop: "8px",
+  paddingLeft: "20px",
 }
 
 export default App
