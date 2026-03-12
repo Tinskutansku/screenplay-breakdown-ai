@@ -27,6 +27,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [scriptText, setScriptText] = useState<string>("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   const fetchScenes = async () => {
     try {
@@ -78,6 +79,38 @@ function App() {
       setLoading(false)
     }
   }
+  const uploadScriptFile = async () => {
+  if (!selectedFile) {
+    setError("Please choose a .txt file first.")
+    return
+  }
+
+  try {
+    setLoading(true)
+    setError(null)
+
+    const formData = new FormData()
+    formData.append("file", selectedFile)
+
+    const response = await fetch("http://localhost:8000/upload-script", {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("File upload failed")
+    }
+
+    const parsedScenes = await response.json()
+
+    setScenes(parsedScenes)
+    setExpandedSceneIds([])
+  } catch {
+    setError("Failed to upload and parse file.")
+  } finally {
+    setLoading(false)
+  }
+}
 
   useEffect(() => {
     fetchScenes()
@@ -148,6 +181,25 @@ function App() {
         <button onClick={parseScript}>
           Parse screenplay
         </button>
+<div style={{ marginTop: 20 }}>
+  <h3>Or upload a .txt screenplay file</h3>
+
+  <input
+    type="file"
+    accept=".txt"
+    onChange={(event) => {
+      const file = event.target.files?.[0] || null
+      setSelectedFile(file)
+    }}
+  />
+
+  <div style={{ marginTop: 10 }}>
+    <button onClick={uploadScriptFile}>
+      Upload .txt file
+    </button>
+  </div>
+</div>
+
       </div>
 
       <div style={{ marginBottom: 20 }}>
