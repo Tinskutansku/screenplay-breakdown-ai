@@ -23,12 +23,32 @@ type Scene = {
 function App() {
   const [scenes, setScenes] = useState<Scene[]>([])
   const [expandedSceneIds, setExpandedSceneIds] = useState<string[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("http://localhost:8000/scenes")
-      .then((res) => res.json())
-      .then((data) => setScenes(data))
-      .catch((error) => console.error("Error fetching scenes:", error))
+    const fetchScenes = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await fetch("http://localhost:8000/scenes")
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setScenes(data)
+      } catch (err) {
+        console.error("Error fetching scenes:", err)
+        setError("Failed to load scenes. Please check that the backend is running.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchScenes()
   }, [])
 
   const toggleSceneDetails = (sceneNumber: string) => {
@@ -58,6 +78,24 @@ function App() {
     }
 
     return items.join(", ")
+  }
+
+  if (loading) {
+    return (
+      <div style={pageStyle}>
+        <h1>Film AI Breakdown</h1>
+        <p>Loading scenes...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={pageStyle}>
+        <h1>Film AI Breakdown</h1>
+        <p style={errorTextStyle}>{error}</p>
+      </div>
+    )
   }
 
   return (
@@ -204,6 +242,11 @@ const detailCell = {
 const detailBox = {
   padding: "16px",
   backgroundColor: "#fafafa",
+}
+
+const errorTextStyle = {
+  color: "#b00020",
+  fontWeight: "bold" as const,
 }
 
 export default App
