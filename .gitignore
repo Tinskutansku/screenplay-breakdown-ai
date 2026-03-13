@@ -9,9 +9,9 @@ backend/__pycache__/
 *.env
 
 # Node / React
-frontend/frontend/node_modules/
-frontend/frontend/dist/
-frontend/frontend/.vite/
+node_modules/
+dist/
+.vite/
 
 # OS / editor junk
 .DS_Store
