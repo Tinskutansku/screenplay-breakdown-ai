@@ -1,3 +1,5 @@
+import { statsBoxStyle, statsListStyle } from "../styles/sceneStyles"
+
 type CharacterAppearance = [string, number]
 
 type SceneStatisticsProps = {
@@ -39,18 +41,6 @@ function SceneStatistics({
       )}
     </div>
   )
-}
-
-const statsBoxStyle = {
-  marginTop: "30px",
-  padding: "16px",
-  border: "1px solid #ccc",
-  backgroundColor: "#fafafa"
-}
-
-const statsListStyle = {
-  marginTop: "8px",
-  paddingLeft: "20px"
 }
 
 export default SceneStatistics

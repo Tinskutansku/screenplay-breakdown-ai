@@ -1,4 +1,5 @@
 import type { Scene } from "../types/scene"
+import { tableStyle, cellStyle, emptyCellStyle } from "../styles/sceneStyles"
 import SceneRow from "./SceneRow"
 
 type SceneTableProps = {
@@ -45,23 +46,6 @@ function SceneTable({
       </tbody>
     </table>
   )
-}
-
-const tableStyle = {
-  borderCollapse: "collapse" as const,
-  width: "100%"
-}
-
-const cellStyle = {
-  border: "1px solid #ccc",
-  padding: "8px"
-}
-
-const emptyCellStyle = {
-  border: "1px solid #ccc",
-  padding: "16px",
-  textAlign: "center" as const,
-  backgroundColor: "#fafafa"
 }
 
 export default SceneTable

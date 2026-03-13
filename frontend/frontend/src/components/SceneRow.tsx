@@ -2,6 +2,7 @@ import React from "react"
 import type { Scene } from "../types/scene"
 import { renderList } from "../utils/sceneHelpers"
 import SceneDetail from "./SceneDetail"
+import { cellStyle, detailCellStyle } from "../styles/sceneStyles"
 
 type SceneRowProps = {
   scene: Scene
@@ -38,16 +39,6 @@ function SceneRow({ scene, isExpanded, onToggle }: SceneRowProps) {
       )}
     </React.Fragment>
   )
-}
-
-const cellStyle = {
-  border: "1px solid #ccc",
-  padding: "8px"
-}
-
-const detailCellStyle = {
-  border: "1px solid #ccc",
-  padding: "0"
 }
 
 export default SceneRow

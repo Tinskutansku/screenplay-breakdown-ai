@@ -1,3 +1,5 @@
+import { controlsWrapperStyle, searchInputStyle } from "../styles/sceneStyles"
+
 type SceneControlProps = {
   searchTerm: string
   onSearchChange: (value: string) => void
@@ -28,19 +30,6 @@ function SceneControl({
       <button onClick={onCloseAll}>Close all</button>
     </div>
   )
-}
-
-const controlsWrapperStyle = {
-  marginBottom: "20px",
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap" as const,
-  alignItems: "center"
-}
-
-const searchInputStyle = {
-  minWidth: "240px",
-  padding: "8px"
 }
 
 export default SceneControl

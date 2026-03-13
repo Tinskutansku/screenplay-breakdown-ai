@@ -1,3 +1,9 @@
+import {
+  scriptWrapperStyle,
+  textAreaStyle,
+  uploadSectionStyle
+} from "../styles/sceneStyles"
+
 type ScriptInputProps = {
   scriptText: string
   onScriptTextChange: (value: string) => void
@@ -16,7 +22,7 @@ function ScriptInput({
   onUploadFile
 }: ScriptInputProps) {
   return (
-    <div style={wrapperStyle}>
+    <div style={scriptWrapperStyle}>
       <h3>Paste screenplay text</h3>
 
       <textarea
@@ -41,9 +47,7 @@ function ScriptInput({
           }}
         />
 
-        {selectedFile && (
-          <p>Selected file: {selectedFile.name}</p>
-        )}
+        {selectedFile && <p>Selected file: {selectedFile.name}</p>}
 
         <div style={{ marginTop: "10px" }}>
           <button onClick={onUploadFile}>Upload file</button>
@@ -51,19 +55,6 @@ function ScriptInput({
       </div>
     </div>
   )
-}
-
-const wrapperStyle = {
-  marginBottom: "30px"
-}
-
-const textAreaStyle = {
-  width: "100%",
-  marginBottom: "10px"
-}
-
-const uploadSectionStyle = {
-  marginTop: "20px"
 }
 
 export default ScriptInput

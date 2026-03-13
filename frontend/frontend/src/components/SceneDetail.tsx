@@ -1,5 +1,6 @@
 import type { Scene } from "../types/scene"
 import { renderList } from "../utils/sceneHelpers"
+import { detailBoxStyle } from "../styles/sceneStyles"
 
 type SceneDetailProps = {
   scene: Scene
@@ -21,11 +22,6 @@ function SceneDetail({ scene }: SceneDetailProps) {
       <p><strong>Notes:</strong> {renderList(scene.notes)}</p>
     </div>
   )
-}
-
-const detailBoxStyle = {
-  padding: "16px",
-  backgroundColor: "#fafafa"
 }
 
 export default SceneDetail

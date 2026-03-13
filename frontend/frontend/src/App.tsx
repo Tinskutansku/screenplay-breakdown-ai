@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import type { Scene } from "./types/scene"
+
 import ScriptInput from "./components/ScriptInput"
 import SceneControl from "./components/SceneControl"
 import SceneTable from "./components/SceneTable"
 import SceneStatistics from "./components/SceneStatistics"
+
 import { filterScenes, getSceneStatistics } from "./utils/sceneHelpers"
+import { pageStyle } from "./styles/sceneStyles"
 
 function App() {
   const [scenes, setScenes] = useState<Scene[]>([])
@@ -180,11 +183,6 @@ function App() {
       />
     </div>
   )
-}
-
-const pageStyle = {
-  padding: "40px",
-  fontFamily: "Arial"
 }
 
 export default App
