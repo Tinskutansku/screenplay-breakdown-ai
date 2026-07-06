@@ -67,3 +67,12 @@ export const textAreaStyle = {
 export const uploadSectionStyle = {
   marginTop: "20px"
 }
+
+export const actionErrorStyle = {
+  color: "#b00020",
+  backgroundColor: "#fdecea",
+  border: "1px solid #f5c6cb",
+  borderRadius: "4px",
+  padding: "10px 14px",
+  marginBottom: "20px"
+}
