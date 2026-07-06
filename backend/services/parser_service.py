@@ -60,6 +60,35 @@ def finalize_scene(scene: Scene) -> Scene:
     return scene
 
 
+def parse_scene_heading(raw_heading: str) -> tuple[str, str, str]:
+    """Normalize a raw scene heading (e.g. "INT. KITCHEN - MORNING") into
+    (int_ext, location, time_of_day). Shared by both the .txt and .fdx parsers."""
+
+    normalized_heading = (
+        raw_heading.replace("–", "-").replace("—", "-").replace(".", "")
+    )
+
+    parts = normalized_heading.split(" - ")
+
+    location_part = parts[0].strip().upper()
+    time_part = parts[1].strip() if len(parts) > 1 else ""
+
+    if "INT/EXT" in location_part:
+        int_ext = "INT/EXT"
+        location = location_part.replace("INT/EXT", "").strip()
+    elif "INT" in location_part:
+        int_ext = "INT"
+        location = location_part.replace("INT", "").strip()
+    elif "EXT" in location_part:
+        int_ext = "EXT"
+        location = location_part.replace("EXT", "").strip()
+    else:
+        int_ext = ""
+        location = location_part.strip()
+
+    return int_ext, location, time_part
+
+
 def parse_screenplay(text: str) -> List[Scene]:
     lines = text.split("\n")
 
@@ -84,24 +113,7 @@ def parse_screenplay(text: str) -> List[Scene]:
             if current_scene:
                 scenes.append(finalize_scene(current_scene))
 
-            heading = line.replace(".", "")
-            parts = heading.split(" - ")
-
-            location_part = parts[0].strip().upper()
-            time_part = parts[1].strip() if len(parts) > 1 else ""
-
-            if "INT/EXT" in location_part:
-                int_ext = "INT/EXT"
-                location = location_part.replace("INT/EXT", "").strip()
-            elif "INT" in location_part:
-                int_ext = "INT"
-                location = location_part.replace("INT", "").strip()
-            elif "EXT" in location_part:
-                int_ext = "EXT"
-                location = location_part.replace("EXT", "").strip()
-            else:
-                int_ext = ""
-                location = location_part.strip()
+            int_ext, location, time_part = parse_scene_heading(line)
 
             current_scene = create_empty_scene(
                 scene_number=scene_counter,
@@ -150,29 +162,7 @@ def parse_fdx(content: bytes) -> List[Scene]:
             if current_scene:
                 scenes.append(finalize_scene(current_scene))
 
-            normalized_heading = (
-                paragraph_text.replace("–", "-")
-                .replace("—", "-")
-                .replace(".", "")
-            )
-
-            parts = normalized_heading.split(" - ")
-
-            location_part = parts[0].strip().upper()
-            time_part = parts[1].strip() if len(parts) > 1 else ""
-
-            if "INT/EXT" in location_part:
-                int_ext = "INT/EXT"
-                location = location_part.replace("INT/EXT", "").strip()
-            elif "INT" in location_part:
-                int_ext = "INT"
-                location = location_part.replace("INT", "").strip()
-            elif "EXT" in location_part:
-                int_ext = "EXT"
-                location = location_part.replace("EXT", "").strip()
-            else:
-                int_ext = ""
-                location = location_part.strip()
+            int_ext, location, time_part = parse_scene_heading(paragraph_text)
 
             current_scene = create_empty_scene(
                 scene_number=scene_counter,
