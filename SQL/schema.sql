@@ -110,11 +110,40 @@ CREATE TABLE contacts (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- SHOOTING_LOCATIONS
+-- The real-world place, as opposed to `locations` below, which is the
+-- fictional location name as written in the script (e.g. "Annan koti").
+-- One shooting_locations row commonly covers several `locations` rows -
+-- "Annan koti - keittiö" (INT) and "Annan koti - piha" (EXT) might both
+-- be the same house.
+CREATE TABLE shooting_locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name TEXT, -- a friendly label for the real place, e.g. "Meilahden omakotitalo"
+    address TEXT,
+    city TEXT,
+    postal_code TEXT,
+    country TEXT,
+    latitude FLOAT,
+    longitude FLOAT,
+    contact_name TEXT,
+    contact_phone TEXT,
+    contact_email TEXT,
+    parking_notes TEXT,
+    access_notes TEXT,
+    permit_status TEXT, -- e.g. 'not started' | 'requested' | 'confirmed'
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- LOCATIONS
+-- shooting_location_id is nullable - a scripted location that hasn't been
+-- scouted yet simply has no real-world place linked yet.
 CREATE TABLE locations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    shooting_location_id UUID REFERENCES shooting_locations(id) ON DELETE SET NULL
 );
 
 -- CHARACTERS
@@ -269,3 +298,5 @@ CREATE INDEX idx_strip_scenes_strip_id ON strip_scenes(strip_id);
 CREATE INDEX idx_strip_scenes_scene_id ON strip_scenes(scene_id);
 CREATE INDEX idx_call_sheet_entries_call_sheet_id ON call_sheet_entries(call_sheet_id);
 CREATE INDEX idx_call_sheet_entries_contact_id ON call_sheet_entries(contact_id);
+CREATE INDEX idx_locations_shooting_location_id ON locations(shooting_location_id);
+CREATE INDEX idx_shooting_locations_project_id ON shooting_locations(project_id);

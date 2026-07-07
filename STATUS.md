@@ -9,7 +9,7 @@ Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytö
 - React-frontend: kohtaustaulukko, haku, avaa/sulje kaikki, tilastonäkymä (uniikit sijainnit/hahmot, esiintymismäärät)
 - Salasanan hashays/tarkistus ja JWT access/refresh-tokenit (`services/security.py`) - toimivat täysin ilman tietokantaa jo nyt
 - `/auth/me` ja `get_current_user_id`-riippuvuus tarkistavat Bearer-tokenin oikein (allekirjoitus, vanhentuminen, access vs. refresh -tyyppi)
-- `SQL/schema.sql` kattaa nyt myös tuotannon aikataulutuksen (script-revisiot, joustava stripboard, call sheetit) - validoitu oikealla Postgres-kieliopilla (`pglast`), ei vielä ajettu oikeaa tietokantaa vastaan
+- `SQL/schema.sql` kattaa nyt myös tuotannon aikataulutuksen (script-revisiot, joustava stripboard, call sheetit) ja oikean maailman kuvauspaikkojen linkityksen (`shooting_locations`) - validoitu oikealla Postgres-kieliopilla (`pglast`), ei vielä ajettu oikeaa tietokantaa vastaan
 
 ## Näyttää valmiilta mutta on stub
 
@@ -32,10 +32,11 @@ Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytö
 2. Paranna hahmontunnistusta, täytä tyhjät kentät, lisää testit ja virheenkäsittely — tehty
 3. Auth-arkkitehtuuri ennen tietokantaa: ADR + salasanahashays + JWT + skeeman auth-taulut — tehty, ks. `docs/adr/0001-authentication-and-authorization.md`
 4. Tuotannon aikataulutuksen datamalli (script-revisiot, joustava stripboard, call sheetit) — tehty, ks. `docs/adr/0002-production-scheduling-data-model.md`
-5. Kytke tietokanta - seuraava askel. Sisältää: skeeman ajaminen oikeaa Postgresia vastaan ensimmäistä kertaa, oikeat DB-kutsut /auth/register + /auth/login + /auth/refresh -reitteihin, get_current_user-riippuvuuden täydentäminen, project_members-pohjainen omistajuustarkistus jokaiseen reittiin
-6. Google OAuth -asiakkaan rekisteröinti Google Cloud Consolessa ja oikeat tunnukset `.env`-tiedostoon
-7. Sähköpostipalvelun valinta (Resend/Postmark/SendGrid) sähköpostivahvistusta ja salasanan resetointia varten
-8. Myöhemmin: oikea AI/NLP-pohjainen poiminta props/set_dressing/notes-kentille (sääntöpohjainen ei riitä näihin)
+5. Oikean maailman kuvauspaikkojen linkitys (shooting_locations) — tehty, ks. `docs/adr/0003-real-world-shooting-locations.md`
+6. Kytke tietokanta - seuraava askel. Sisältää: skeeman ajaminen oikeaa Postgresia vastaan ensimmäistä kertaa, oikeat DB-kutsut /auth/register + /auth/login + /auth/refresh -reitteihin, get_current_user-riippuvuuden täydentäminen, project_members-pohjainen omistajuustarkistus jokaiseen reittiin
+7. Google OAuth -asiakkaan rekisteröinti Google Cloud Consolessa ja oikeat tunnukset `.env`-tiedostoon
+8. Sähköpostipalvelun valinta (Resend/Postmark/SendGrid) sähköpostivahvistusta ja salasanan resetointia varten
+9. Myöhemmin: oikea AI/NLP-pohjainen poiminta props/set_dressing/notes-kentille (sääntöpohjainen ei riitä näihin)
 
 ## Siivous 2026-07-06
 
@@ -82,6 +83,15 @@ Päätös dokumentoitu: `docs/adr/0002-production-scheduling-data-model.md`. Kol
 - **Call sheetit**: uusi `contacts`-taulu oikeille ihmisille (näyttelijät, kruunu - puhelinnumero, rooli, osasto), koska `characters`-taulu on vain fiktiivisiä hahmoja eikä sisällä yhteystietoja. `characters.played_by_contact_id` linkittää hahmon oikeaan näyttelijään. Uudet `call_sheets` (yksi per kuvauspäivä) ja `call_sheet_entries` (henkilökohtainen call-aika per call sheet) -taulut kattavat call sheetin logistiikkakerroksen ilman että aikataulutieto duplikoituu.
 - Varmistettu: koko skeema jäsentyi virheettä oikealla Postgres-kieliopilla (`pglast`-kirjasto, koska tässä ympäristössä ei ole ajettavaa Postgresia), ja jokainen `REFERENCES`-viittaus tarkistettiin osoittavan aiemmin määriteltyyn tauluun (taulujen luontijärjestys on oikea). Ei ole vielä ajettu oikeaa tietokantaa vastaan.
 
-Muutokset ovat työhakemistossa, ei vielä committoitu.
+Committoitu (`916d119`, `ab7107f`).
+
+## Oikean maailman kuvauspaikat 2026-07-07
+
+Päätös dokumentoitu: `docs/adr/0003-real-world-shooting-locations.md`. Sama kuvio kuin ADR-0002:ssa hahmot vs. yhteystiedot, nyt paikoille: `locations`-taulu sisälsi vain käsikirjoituksen fiktiivisen paikan nimen ("Annan koti"), ei mitään tapaa liittää siihen oikeaa kuvausosoitetta.
+
+- Uusi `shooting_locations`-taulu: osoite, kaupunki, postinumero, koordinaatit, paikan yhteyshenkilö, parkkeeraus-/kulkuohjeet, lupatilanne.
+- `locations.shooting_location_id` (nullable FK) linkittää fiktiivisen paikan yhteen `shooting_locations`-riviin. Moni `locations`-rivi voi osoittaa samaan `shooting_locations`-riviin - yksi oikea osoite kattaa usein monta scriptin paikkaa (esim. "Annan koti - keittiö" ja "Annan koti - piha" kuvataan samassa talossa).
+- Mallinnettu tarkoituksella samalla periaatteella kuin `characters.played_by_contact_id`: yksi nykyinen linkki, ei historiaa eikä useita ehdokkaita. Paikkaskoutaus-workflow (useita ehdokasosoitteita) jätetty tulevaisuuteen, jos sille joskus tulee tarvetta.
+- Varmistettu: skeema jäsentyy virheettä `pglast`:lla (42 SQL-lausetta), ja `shooting_locations` on määritelty ennen `locations`:ia skeemassa niin että viittaus osoittaa jo olemassa olevaan tauluun.
 
 Päivitä tätä tiedostoa sitä mukaa kun kohtia ratkeaa, niin kokonaiskuva pysyy hallussa ilman että pitää lukea koko koodikanta uudelleen joka kerta.
