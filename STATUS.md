@@ -9,7 +9,7 @@ Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytö
 - React-frontend: kohtaustaulukko, haku, avaa/sulje kaikki, tilastonäkymä (uniikit sijainnit/hahmot, esiintymismäärät)
 - Salasanan hashays/tarkistus ja JWT access/refresh-tokenit (`services/security.py`) - toimivat täysin ilman tietokantaa jo nyt
 - `/auth/me` ja `get_current_user_id`-riippuvuus tarkistavat Bearer-tokenin oikein (allekirjoitus, vanhentuminen, access vs. refresh -tyyppi)
-- `SQL/schema.sql` kattaa nyt myös tuotannon aikataulutuksen (script-revisiot, joustava stripboard, call sheetit) ja oikean maailman kuvauspaikkojen linkityksen (`shooting_locations`) - validoitu oikealla Postgres-kieliopilla (`pglast`), ei vielä ajettu oikeaa tietokantaa vastaan
+- `SQL/schema.sql` kattaa nyt tuotannon aikataulutuksen (script-revisiot, joustava stripboard, call sheetit), oikean maailman kuvauspaikkojen linkityksen (`shooting_locations`) sekä cast-numeroinnin, agentin yhteystiedot ja jaetut call-ajat (ks. ADR-0004) - validoitu oikealla Postgres-kieliopilla (`pglast`), ei vielä ajettu oikeaa tietokantaa vastaan
 
 ## Näyttää valmiilta mutta on stub
 
@@ -25,6 +25,7 @@ Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytö
 - Sääntöpohjainen avainsanapoiminta (sound/vehicles/stunts/wardrobe/makeup_hair/background_actors) on väistämättä epätarkka: kattavuus rajallinen eikä kaikkia tapauksia voi kattaa avainsanalistalla
 - Mitään reittiä ei ole vielä suojattu `get_current_user`-riippuvuudella - `/scenes`, `/parse-script`, `/upload-script` ovat yhä avoimia. Tämä on tarkoituksellista niin kauan kuin DB ei ole kytketty (frontend ei vielä lähetä tokeneita) - suojaus tulee osana DB-integraatiota.
 - `SQL/schema.sql` on validoitu vain syntaktisesti (pglast) - ei ole ajettu oikeaa Postgresia vastaan, koska tässä ympäristössä ei ole Postgresia saatavilla eikä DB ole vielä kytketty projektiin
+- Figma-UI:ssa on "Music/Playback"-elementtikategoria, jota parserin `scene_elements`-poiminta ei vielä tunnista (skeema tukee sitä jo, koska `element_type` on vapaata tekstiä - kyse on vain parser_service.py:n avainsanalistan puutteesta)
 
 ## Ehdotettu järjestys
 
@@ -33,10 +34,11 @@ Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytö
 3. Auth-arkkitehtuuri ennen tietokantaa: ADR + salasanahashays + JWT + skeeman auth-taulut — tehty, ks. `docs/adr/0001-authentication-and-authorization.md`
 4. Tuotannon aikataulutuksen datamalli (script-revisiot, joustava stripboard, call sheetit) — tehty, ks. `docs/adr/0002-production-scheduling-data-model.md`
 5. Oikean maailman kuvauspaikkojen linkitys (shooting_locations) — tehty, ks. `docs/adr/0003-real-world-shooting-locations.md`
-6. Kytke tietokanta - seuraava askel. Sisältää: skeeman ajaminen oikeaa Postgresia vastaan ensimmäistä kertaa, oikeat DB-kutsut /auth/register + /auth/login + /auth/refresh -reitteihin, get_current_user-riippuvuuden täydentäminen, project_members-pohjainen omistajuustarkistus jokaiseen reittiin
-7. Google OAuth -asiakkaan rekisteröinti Google Cloud Consolessa ja oikeat tunnukset `.env`-tiedostoon
-8. Sähköpostipalvelun valinta (Resend/Postmark/SendGrid) sähköpostivahvistusta ja salasanan resetointia varten
-9. Myöhemmin: oikea AI/NLP-pohjainen poiminta props/set_dressing/notes-kentille (sääntöpohjainen ei riitä näihin)
+6. Figma-UI:n pohjalta löydetyt skeemapuutteet (cast-numerointi, agentin yhteystiedot, jaetut call-ajat, osastokohtaiset call sheet -huomiot) — tehty, ks. `docs/adr/0004-call-sheet-and-cast-ui-gaps.md`
+7. Kytke tietokanta - seuraava askel. Sisältää: skeeman ajaminen oikeaa Postgresia vastaan ensimmäistä kertaa, oikeat DB-kutsut /auth/register + /auth/login + /auth/refresh -reitteihin, get_current_user-riippuvuuden täydentäminen, project_members-pohjainen omistajuustarkistus jokaiseen reittiin
+8. Google OAuth -asiakkaan rekisteröinti Google Cloud Consolessa ja oikeat tunnukset `.env`-tiedostoon
+9. Sähköpostipalvelun valinta (Resend/Postmark/SendGrid) sähköpostivahvistusta ja salasanan resetointia varten
+10. Myöhemmin: oikea AI/NLP-pohjainen poiminta props/set_dressing/notes-kentille (sääntöpohjainen ei riitä näihin)
 
 ## Siivous 2026-07-06
 
@@ -93,5 +95,16 @@ Päätös dokumentoitu: `docs/adr/0003-real-world-shooting-locations.md`. Sama k
 - `locations.shooting_location_id` (nullable FK) linkittää fiktiivisen paikan yhteen `shooting_locations`-riviin. Moni `locations`-rivi voi osoittaa samaan `shooting_locations`-riviin - yksi oikea osoite kattaa usein monta scriptin paikkaa (esim. "Annan koti - keittiö" ja "Annan koti - piha" kuvataan samassa talossa).
 - Mallinnettu tarkoituksella samalla periaatteella kuin `characters.played_by_contact_id`: yksi nykyinen linkki, ei historiaa eikä useita ehdokkaita. Paikkaskoutaus-workflow (useita ehdokasosoitteita) jätetty tulevaisuuteen, jos sille joskus tulee tarvetta.
 - Varmistettu: skeema jäsentyy virheettä `pglast`:lla (42 SQL-lausetta), ja `shooting_locations` on määritelty ennen `locations`:ia skeemassa niin että viittaus osoittaa jo olemassa olevaan tauluun.
+
+## Figma-UI:n katselmointi: cast-numerointi, agentin yhteystiedot, jaetut call-ajat, osastokohtaiset huomiot 2026-07-07
+
+Päätös dokumentoitu: `docs/adr/0004-call-sheet-and-cast-ui-gaps.md`. Tanja oli suunnitellut UI:n (Script Breakdown, Strips Board, Call Sheet) itsenäisesti Figmassa; käytiin se läpi selaimen kautta ja verrattiin skeemaan ennen tietokannan kytkemistä. Suurin osa täsmäsi jo suoraan (script-revisiot, stripit, sivut kahdeksasosina, real-world-lokaatiot), mutta neljä aukkoa löytyi:
+
+- **Cast-numerointi**: `characters.cast_number` (nullable, osittainen uniikki-indeksi per projekti). UI näyttää joka näkymässä hahmot pysyvällä numerolla ("1 - Hayes"), joka on tuotannon itse asettama (billausjärjestyksen mukaan, ei kohtausjärjestyksen) - täytyy siis tallentaa, ei laskea.
+- **Agentin yhteystiedot**: `contacts.agent_name`, `agent_phone`, `agent_email`. Call sheetin cast-taulukossa on oma sarake agentin tiedoille, erillään näyttelijän omista yhteystiedoista.
+- **Jaetut call-ajat**: `call_sheet_entries.call_time` korvattu kolmella: `makeup_hair_time`, `on_set_time`, `unit_call_time` - call sheet näyttää jokaiselle henkilölle kolme erillistä aikaa yhden sijaan.
+- **Osastokohtaiset call sheet -huomiot**: uusi `call_sheet_department_notes`-taulu (rivi per huomio, ryhmitelty osastolla, järjestettävissä) korvaamaan yhden `call_sheets.general_notes`-tekstikentän. Tanja oli itse pyytänyt Figman AI:lta, että call sheet -osio pitää saada täysin muokattavaksi (add/remove-napit per huomio) - vain rivipohjainen malli tukee sitä.
+- Ei skeemamuutosta, mutta huomioitu jatkoa varten: Figma-UI:ssa on myös "Music/Playback"-elementtikategoria, jota parserin avainsanapoiminta ei vielä tunnista - `scene_elements.element_type` on jo vapaata tekstiä joten skeema tukee sitä valmiiksi, kyse on vain `parser_service.py`:n avainsanalistan laajentamisesta myöhemmin.
+- Varmistettu: skeema jäsentyy virheettä `pglast`:lla (45 SQL-lausetta, 21 taulua), FK-järjestys tarkistettu koko skeeman läpi.
 
 Päivitä tätä tiedostoa sitä mukaa kun kohtia ratkeaa, niin kokonaiskuva pysyy hallussa ilman että pitää lukea koko koodikanta uudelleen joka kerta.

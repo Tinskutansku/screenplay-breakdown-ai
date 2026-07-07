@@ -99,6 +99,10 @@ CREATE UNIQUE INDEX idx_one_current_revision_per_script
 -- Real people involved in the production (cast and crew), as opposed to
 -- `characters` below, which are fictional people in the story. This is
 -- what a call sheet actually needs to know who to call and when.
+-- agent_name/agent_phone/agent_email are separate from the contact's own
+-- phone/email - a call sheet needs to reach the agent for scheduling and
+-- contract matters, not just the talent directly. Nullable since crew
+-- typically don't have an agent on file.
 CREATE TABLE contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -107,6 +111,9 @@ CREATE TABLE contacts (
     department TEXT, -- e.g. 'Cast', 'Camera', 'Grip', 'Production' - for grouping on the call sheet
     phone TEXT,
     email TEXT,
+    agent_name TEXT,
+    agent_phone TEXT,
+    agent_email TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -152,13 +159,21 @@ CREATE TABLE locations (
 -- Kept as a single FK rather than a join table for simplicity - a recast
 -- mid-production would just repoint this FK, with no history kept. If
 -- recast history ever matters, this should become its own join table.
+-- cast_number is the production-assigned cast list number shown across
+-- the breakdown, strips, and call sheet UI (e.g. "1 - Hayes"). Assigned
+-- by importance/billing, not scene order, so it must be stored, not
+-- computed. Nullable - background/unnamed characters don't get one.
 CREATE TABLE characters (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     character_type TEXT,
+    cast_number INTEGER,
     played_by_contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL
 );
+
+CREATE UNIQUE INDEX idx_one_cast_number_per_project
+    ON characters(project_id, cast_number) WHERE cast_number IS NOT NULL;
 
 -- SCENES
 -- Belongs to a specific script revision (not the script directly), since
@@ -268,15 +283,36 @@ CREATE TABLE call_sheets (
 -- Per-person call time for a given call sheet - background/crew are
 -- typically called earlier than lead cast, so each person needs their
 -- own time, not just the sheet-wide default times above.
+-- Three separate times (not one) because a shooting day genuinely has
+-- three distinct moments per person: when makeup/hair starts, when they
+-- need to be ready on set, and the general unit call. Collapsing these
+-- into a single call_time would lose information the call sheet UI
+-- already models.
 CREATE TABLE call_sheet_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     call_sheet_id UUID NOT NULL REFERENCES call_sheets(id) ON DELETE CASCADE,
     contact_id UUID NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
-    call_time TIME,
+    makeup_hair_time TIME,
+    on_set_time TIME,
+    unit_call_time TIME,
     pickup_time TIME,
     notes TEXT,
     order_index INTEGER NOT NULL DEFAULT 0,
     UNIQUE (call_sheet_id, contact_id)
+);
+
+-- CALL_SHEET_DEPARTMENT_NOTES
+-- One row per note/bullet, grouped by department (Camera, Lighting,
+-- Art/Set Dec, Transport, ...) and ordered within that department.
+-- Replaces a single call_sheets.general_notes blob so individual notes
+-- can be added/removed/reordered independently in the UI, per
+-- department, without rewriting a shared text field on every edit.
+CREATE TABLE call_sheet_department_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    call_sheet_id UUID NOT NULL REFERENCES call_sheets(id) ON DELETE CASCADE,
+    department TEXT NOT NULL, -- e.g. 'Camera', 'Lighting', 'Art / Set Dec', 'Transport'
+    note_text TEXT NOT NULL,
+    order_index INTEGER NOT NULL DEFAULT 0
 );
 
 -- INDEKSIT nopeuttamaan hakuja
@@ -300,3 +336,4 @@ CREATE INDEX idx_call_sheet_entries_call_sheet_id ON call_sheet_entries(call_she
 CREATE INDEX idx_call_sheet_entries_contact_id ON call_sheet_entries(contact_id);
 CREATE INDEX idx_locations_shooting_location_id ON locations(shooting_location_id);
 CREATE INDEX idx_shooting_locations_project_id ON shooting_locations(project_id);
+CREATE INDEX idx_call_sheet_department_notes_call_sheet_id ON call_sheet_department_notes(call_sheet_id);
