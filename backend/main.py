@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from routers.auth import router as auth_router
 from routers.scenes import router as scenes_router
 from routers.scripts import router as scripts_router
 
@@ -15,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(scenes_router)
 app.include_router(scripts_router)
 
