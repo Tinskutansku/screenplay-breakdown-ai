@@ -4,6 +4,10 @@ Käsikirjoituksen automaattinen purku kuvaussuunnittelua varten. Sovellus lukee 
 
 Projekti syntyi omasta kokemuksesta. Tein viisi vuotta tuotantokoordinaattorina ja tuotantopäällikkönä kansainvälisiä elokuva- ja tv-tuotantoja (mm. *Ivalo*), ja käsikirjoituksen purku kuvausaikataulua varten tehdään edelleen pitkälti käsin.
 
+**[Kokeile demoa → screenplay-breakdown.onrender.com](https://screenplay-breakdown.onrender.com)**
+
+Demo pyörii Renderin ilmaisella tasolla, joten ensimmäinen lataus voi kestää noin minuutin, jos palvelu on ollut hetken käyttämättä.
+
 ![Purettu esimerkkikäsikirjoitus stripboard-väreillä](docs/kuvat/purku.png)
 
 ## Mitä sovellus tekee
@@ -18,7 +22,7 @@ Poiminta on sääntöpohjaista, ei kielimallia. Rekvisiitta, lavastus ja yleiset
 
 ## Kokeile
 
-Sovelluksessa on valmiina lyhyt kuuden kohtauksen esimerkkikäsikirjoitus ("Pura esimerkki"). Saman esimerkin voi ladata myös tiedostona, [`.fdx`](frontend/public/esimerkit/viimeinen-juna.fdx) tai [`.txt`](frontend/public/esimerkit/viimeinen-juna.txt).
+Helpoin tapa on avata [demo](https://screenplay-breakdown.onrender.com). Sovelluksessa on valmiina lyhyt kuuden kohtauksen esimerkkikäsikirjoitus ("Pura esimerkki"). Saman esimerkin voi ladata myös tiedostona, [`.fdx`](frontend/public/esimerkit/viimeinen-juna.fdx) tai [`.txt`](frontend/public/esimerkit/viimeinen-juna.txt).
 
 ### Paikallisesti
 
