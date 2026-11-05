@@ -1,33 +1,26 @@
-import { controlsWrapperStyle, searchInputStyle } from "../styles/sceneStyles"
-
 type SceneControlProps = {
   searchTerm: string
   onSearchChange: (value: string) => void
-  onRefresh: () => void
   onOpenAll: () => void
   onCloseAll: () => void
 }
 
-function SceneControl({
-  searchTerm,
-  onSearchChange,
-  onRefresh,
-  onOpenAll,
-  onCloseAll
-}: SceneControlProps) {
+function SceneControl({ searchTerm, onSearchChange, onOpenAll, onCloseAll }: SceneControlProps) {
   return (
-    <div style={controlsWrapperStyle}>
+    <div className="controls">
+      <label htmlFor="scene-search" className="visually-hidden">
+        Hae kohtauksista
+      </label>
       <input
-        type="text"
-        placeholder="Search scenes..."
+        id="scene-search"
+        type="search"
+        placeholder="Hae paikkaa, hahmoa tai elementtiä…"
         value={searchTerm}
         onChange={(event) => onSearchChange(event.target.value)}
-        style={searchInputStyle}
+        className="search-input"
       />
-
-      <button onClick={onRefresh}>Refresh</button>
-      <button onClick={onOpenAll}>Open all</button>
-      <button onClick={onCloseAll}>Close all</button>
+      <button className="btn" onClick={onOpenAll}>Avaa kaikki</button>
+      <button className="btn" onClick={onCloseAll}>Sulje kaikki</button>
     </div>
   )
 }

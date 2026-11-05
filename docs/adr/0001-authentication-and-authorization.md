@@ -1,6 +1,6 @@
 # ADR-0001: Authentication and authorization model
 
-**Status:** Accepted
+**Status:** Accepted, implementation archived at tag `auth-groundwork` (see ADR-0005)
 **Date:** 2026-07-07
 **Deciders:** Tanja
 

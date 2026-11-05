@@ -1,25 +1,73 @@
-# Screenplay Breakdown AI
+# Screenplay Breakdown
 
-Käsikirjoitusten automaattinen purku ja tuotannon aikataulutustyökalu elokuva- ja tv-tuotannoille. Yhdistää viisi vuotta tuotantokoordinoinnin kokemusta (mm. Ivalo-sarja) käytännön ohjelmistokehitykseen — projekti ratkaisee oikean, itse koetun ongelman: käsikirjoitusten manuaalinen purkaminen kuvausaikataulua varten on hidasta ja virhealtista.
+Käsikirjoituksen automaattinen purku kuvaussuunnittelua varten. Sovellus lukee käsikirjoituksen `.txt`- tai Final Draft `.fdx` -muodossa ja purkaa sen kohtauksiksi, joista näkee paikan, ajankohdan, hahmot ja tuotannolle olennaiset elementit.
+
+Projekti syntyi omasta kokemuksesta. Tein viisi vuotta tuotantokoordinaattorina ja tuotantopäällikkönä kansainvälisiä elokuva- ja tv-tuotantoja (mm. *Ivalo*), ja käsikirjoituksen purku kuvausaikataulua varten tehdään edelleen pitkälti käsin.
+
+![Purettu esimerkkikäsikirjoitus stripboard-väreillä](docs/kuvat/purku.png)
 
 ## Mitä sovellus tekee
 
-- Parsii `.txt`- ja `.fdx`-muotoiset käsikirjoitukset automaattisesti: tunnistaa kohtaukset, INT/EXT-merkinnät, sijainnit, ajankohdan ja hahmot
-- Poimii kohtauksista tuotannollisesti relevantin datan avainsanapohjaisesti (ääni, ajoneuvot, stuntit, puvustus, maskeeraus, taustanäyttelijät, SFX/VFX) sekä suomeksi että englanniksi
-- Tarjoaa React-käyttöliittymän kohtaustaulukon selaamiseen, hakuun ja tilastojen (uniikit sijainnit/hahmot, esiintymismäärät) tarkasteluun
-- Tietokantaskeema (21 taulua) kattaa koko tuotannon aikataulutuksen: script-revisiot, joustava stripboard, call sheetit, oikeat kuvauspaikat osoitteineen, cast-numerointi ja agenttien yhteystiedot
+- **Kohtaukset ja otsikot.** Tunnistaa INT/EXT-merkinnät, paikan (myös alipaikat, esim. `ANNAN KOTI - KEITTIÖ`) ja ajankohdan.
+- **Hahmot.** `.fdx`-tiedostosta luetaan Final Draftin omat Character-kappaleet. Tekstitiedostossa repliikin vetäjät tunnistetaan käsikirjoitusformaatin mukaan isoilla kirjaimilla kirjoitetuista riveistä, ja toimintatekstin nimiä verrataan koko käsikirjoituksen hahmoihin, jotta virkkeen alun sanat ("Kolahdus kuuluu.") eivät päädy hahmoiksi.
+- **Tuotantoelementit.** Taustanäyttelijät, puvustus, maski, ajoneuvot, stuntit, äänet sekä `(SFX: …)` ja `(VFX: …)` -merkinnät poimitaan suomeksi ja englanniksi, taivutusmuodot huomioiden.
+- **Stripboard-värit.** Kohtaukset väritetään alan perinteisellä koodilla (INT päivä valkoinen, EXT päivä keltainen, INT yö sininen, EXT yö vihreä).
+- **Haku ja tilastot.** Haku kaikista kentistä, paikkojen ja hahmojen määrät sekä hahmot kohtausmäärän mukaan.
+
+Poiminta on sääntöpohjaista, ei kielimallia. Rekvisiitta, lavastus ja yleiset huomiot jäävät siksi tyhjiksi, koska niille ei ole luotettavaa tekstisignaalia ilman oikeaa kielenymmärrystä.
+
+## Kokeile
+
+Sovelluksessa on valmiina lyhyt kuuden kohtauksen esimerkkikäsikirjoitus ("Pura esimerkki"). Saman esimerkin voi ladata myös tiedostona, [`.fdx`](frontend/public/esimerkit/viimeinen-juna.fdx) tai [`.txt`](frontend/public/esimerkit/viimeinen-juna.txt).
+
+### Paikallisesti
+
+Vaatii Python 3.10+ ja Node 20+.
+
+```bash
+# Backend (http://localhost:8000)
+cd backend
+python -m venv venv
+venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn main:app --reload
+
+# Frontend toisessa terminaalissa (http://localhost:5173)
+cd frontend
+npm install
+npm run dev
+```
+
+Testit ajetaan `backend`-kansiossa komennolla `pytest`.
+
+### Dockerilla
+
+```bash
+docker build -t screenplay-breakdown .
+docker run -p 8000:8000 screenplay-breakdown
+```
+
+Sovellus aukeaa osoitteeseen http://localhost:8000. Sama image julkaistaan Renderiin `render.yaml`-tiedoston avulla.
 
 ## Teknologiat
 
-**Backend:** Python, FastAPI, SQLAlchemy, JWT-autentikointi (access/refresh-tokenit), bcrypt, pytest (53 testiä)
-**Frontend:** React, TypeScript, Vite
-**Tietokanta:** PostgreSQL (21 taulun skeema, validoitu `pglast`-kirjastolla)
-**Dokumentaatio:** Arkkitehtuuripäätökset (ADR) jokaisesta suuremmasta datamallin päätöksestä
+| | |
+|---|---|
+| Backend | Python, FastAPI, Pydantic |
+| Frontend | React 19, TypeScript, Vite |
+| Testit | pytest (39 testiä), TypeScript strict, ESLint |
+| Julkaisu | Docker, yksi palvelu (FastAPI tarjoilee myös frontendin) |
 
-## Projektin tila
+## Suunnittelutyö, jota ei toteutettu loppuun
 
-Aktiivisessa kehityksessä. Backend-logiikka, autentikaatio ja tietokantaskeema ovat valmiit ja testatut; tietokannan kytkeminen backendiin on seuraava vaihe. Yksityiskohtainen kehitysloki ja tekninen tilannekatsaus: [STATUS.md](./STATUS.md).
+Alkuperäinen tavoite oli monen käyttäjän tuotantotyökalu, jossa käsikirjoituksen purusta edetään stripboardiin ja päivittäisiin call sheeteihin. Tämä osuus on dokumentoitu, mutta sitä ei ole kytketty sovellukseen.
 
-## Tausta
+- **Tietokantaskeema.** [`SQL/schema.sql`](SQL/schema.sql) sisältää 21 taulua (script-revisiot väreineen, joustava stripboard, call sheetit jaettuine call-aikoineen, oikeat kuvauspaikat, cast-numerointi ja agenttien yhteystiedot). Skeema on validoitu PostgreSQL-kielioppia vasten.
+- **Arkkitehtuuripäätökset.** [`docs/adr/`](docs/adr/) perustelee jokaisen datamallin ratkaisun ja hylätyt vaihtoehdot. UI suunniteltiin Figmassa ja käytiin skeemaa vasten läpi, jolloin löytyi neljä puuttuvaa kenttää (ADR-0004).
+- **Autentikointi.** JWT access/refresh-tokenit, bcrypt-salasanat ja niiden 21 testiä toteutettiin, mutta poistettiin päähaarasta, koska tietokantaa ei kytketty. Toteutus löytyy tagista [`auth-groundwork`](https://github.com/Tinskutansku/screenplay-breakdown-ai/tree/auth-groundwork) ja päätös [ADR-0001](docs/adr/0001-authentication-and-authorization.md):stä.
 
-UI-suunnittelu (Script Breakdown, Strips Board, Call Sheet) tehty itsenäisesti Figmassa ja käyty tietokantaskeemaa vasten kohta kohdalta läpi — neljä puuttuvaa kenttää/taulua löytyi ja korjattiin tässä prosessissa ennen kuin niistä olisi tullut kalliimpi migraatio-ongelma myöhemmin.
+Miksi projekti päätettiin tähän, on kirjattu [ADR-0005](docs/adr/0005-finish-as-parser-demo.md):een. Kehitysloki löytyy [STATUS.md](STATUS.md):stä.
+
+## Tila
+
+Valmis. Projektia ei kehitetä aktiivisesti eteenpäin.

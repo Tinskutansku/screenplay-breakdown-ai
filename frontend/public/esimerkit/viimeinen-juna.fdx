@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<FinalDraft DocumentType="Script" Template="No" Version="5">
+  <Content>
+    <Paragraph Type="Scene Heading">
+      <Text>INT. ANNAN KOTI - KEITTIÖ - AAMU</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Anna juo aamukahvia aamutakki päällä. Puhelin soi. Hän katsoo näyttöä ja jättää vastaamatta.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>ANNA</Text>
+    </Paragraph>
+    <Paragraph Type="Parenthetical">
+      <Text>(itsekseen)</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Ei tänään, Juho.</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Puhelin soi uudestaan.</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading">
+      <Text>EXT. ANNAN KOTI - PIHA - AAMU</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Anna kävelee pihan poikki takki auki ja istuu autoon. (SFX: sade alkaa)</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading">
+      <Text>INT. ASEMARAVINTOLA - PÄIVÄ</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Taustalla väkijoukko odottaa myöhässä olevaa junaa. Juho istuu ikkunapöydässä märkä puku päällä. Anna tulee sisään.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>JUHO</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Sä tulit.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>ANNA</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Mä tulin hakemaan avaimet. En muuta.</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Juho työntää avaimet pöydän yli.</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading">
+      <Text>EXT. RAUTATIEASEMA - LAITURI - ILTA</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Juna saapuu laiturille. Ohikulkijat väistävät, kun Juho juoksee laiturin päähän. Takaa-ajo päättyy, kun konduktööri pysäyttää hänet.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>KONDUKTÖÖRI</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Juna lähtee. Liian myöhään.</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading">
+      <Text>INT/EXT. TAKSI - YÖ</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Anna istuu taksin takapenkillä. Meikki on valunut, hiukset märät. Ikkunassa kaupungin valot. (VFX: sadepisarat ikkunassa)</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>ANNA</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Ajetaan vaan. Ihan minne tahansa.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>KULJETTAJA</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Selvä.</Text>
+    </Paragraph>
+    <Paragraph Type="Scene Heading">
+      <Text>INT. ANNAN KOTI - KEITTIÖ - YÖ</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Keittiö on pimeä. Puhelin soi. Anna vastaa.</Text>
+    </Paragraph>
+    <Paragraph Type="Character">
+      <Text>ANNA</Text>
+    </Paragraph>
+    <Paragraph Type="Dialogue">
+      <Text>Juho?</Text>
+    </Paragraph>
+    <Paragraph Type="Action">
+      <Text>Hiljaisuus. Kolahdus kuuluu oven takaa.</Text>
+    </Paragraph>
+  </Content>
+  <TitlePage>
+    <Content>
+      <Paragraph Alignment="Center" Type="Title"><Text>VIIMEINEN JUNA</Text></Paragraph>
+    </Content>
+  </TitlePage>
+</FinalDraft>

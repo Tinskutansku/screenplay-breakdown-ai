@@ -2,10 +2,3 @@ fastapi==0.135.1
 pydantic==2.12.5
 python-multipart==0.0.22
 uvicorn==0.41.0
-
-# Authentication (see docs/adr/0001-authentication-and-authorization.md)
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.5.0
-authlib==1.7.2
-httpx==0.28.1
-email-validator==2.3.0

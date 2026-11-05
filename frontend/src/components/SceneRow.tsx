@@ -1,8 +1,7 @@
-import React from "react"
+import { Fragment } from "react"
 import type { Scene } from "../types/scene"
-import { renderList } from "../utils/sceneHelpers"
+import { renderList, stripClassName } from "../utils/sceneHelpers"
 import SceneDetail from "./SceneDetail"
-import { cellStyle, detailCellStyle } from "../styles/sceneStyles"
 
 type SceneRowProps = {
   scene: Scene
@@ -11,33 +10,43 @@ type SceneRowProps = {
 }
 
 function SceneRow({ scene, isExpanded, onToggle }: SceneRowProps) {
+  const toggle = () => onToggle(scene.scene_number)
+
   return (
-    <React.Fragment>
+    <Fragment>
       <tr
-        onClick={() => onToggle(scene.scene_number)}
-        style={{
-          cursor: "pointer",
-          backgroundColor: isExpanded ? "#f5f5f5" : "white"
+        className={`scene-row ${stripClassName(scene)} ${isExpanded ? "is-expanded" : ""}`}
+        onClick={toggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault()
+            toggle()
+          }
         }}
+        tabIndex={0}
+        aria-expanded={isExpanded}
       >
-        <td style={cellStyle}>
-          {isExpanded ? "▼" : "▶"} {scene.scene_number}
+        <td className="scene-number">
+          <span className="chevron" aria-hidden="true">{isExpanded ? "▾" : "▸"}</span>
+          {scene.scene_number}
         </td>
-        <td style={cellStyle}>{scene.int_ext}</td>
-        <td style={cellStyle}>{scene.location}</td>
-        <td style={cellStyle}>{scene.time_of_day}</td>
-        <td style={cellStyle}>{scene.description}</td>
-        <td style={cellStyle}>{renderList(scene.cast_members)}</td>
+        <td>{scene.int_ext || "—"}</td>
+        <td className="location">{scene.location || "—"}</td>
+        <td>{scene.time_of_day || "—"}</td>
+        <td className="col-description">
+          <div className="clamp">{scene.description || "—"}</div>
+        </td>
+        <td>{renderList(scene.cast_members)}</td>
       </tr>
 
       {isExpanded && (
-        <tr>
-          <td colSpan={6} style={detailCellStyle}>
+        <tr className="detail-row">
+          <td colSpan={6}>
             <SceneDetail scene={scene} />
           </td>
         </tr>
       )}
-    </React.Fragment>
+    </Fragment>
   )
 }
 

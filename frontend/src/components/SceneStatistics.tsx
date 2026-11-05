@@ -1,5 +1,3 @@
-import { statsBoxStyle, statsListStyle } from "../styles/sceneStyles"
-
 type CharacterAppearance = [string, number]
 
 type SceneStatisticsProps = {
@@ -17,28 +15,40 @@ function SceneStatistics({
   uniqueCharactersCount,
   sortedCharacterAppearances
 }: SceneStatisticsProps) {
+  const filtered = visibleScenes !== totalScenes
+
   return (
-    <div style={statsBoxStyle}>
-      <h3>Scene Statistics</h3>
+    <div className="stats">
+      <div className="stat-tiles">
+        <div className="stat-tile">
+          <span className="stat-value">{filtered ? `${visibleScenes}/${totalScenes}` : totalScenes}</span>
+          <span className="stat-label">Kohtausta</span>
+        </div>
+        <div className="stat-tile">
+          <span className="stat-value">{uniqueLocationsCount}</span>
+          <span className="stat-label">Paikkaa</span>
+        </div>
+        <div className="stat-tile">
+          <span className="stat-value">{uniqueCharactersCount}</span>
+          <span className="stat-label">Hahmoa</span>
+        </div>
+      </div>
 
-      <p><strong>Total scenes:</strong> {totalScenes}</p>
-      <p><strong>Visible scenes:</strong> {visibleScenes}</p>
-      <p><strong>Unique locations:</strong> {uniqueLocationsCount}</p>
-      <p><strong>Unique characters:</strong> {uniqueCharactersCount}</p>
-
-      <h4>Character appearances</h4>
-
-      {sortedCharacterAppearances.length === 0 ? (
-        <p>—</p>
-      ) : (
-        <ul style={statsListStyle}>
-          {sortedCharacterAppearances.map(([character, count]) => (
-            <li key={character}>
-              {character}: {count} scene{count !== 1 ? "s" : ""}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="card cast-card">
+        <h2>Hahmot kohtausmäärän mukaan</h2>
+        {sortedCharacterAppearances.length === 0 ? (
+          <p className="muted">Hahmoja ei tunnistettu.</p>
+        ) : (
+          <ol className="cast-list">
+            {sortedCharacterAppearances.map(([character, count]) => (
+              <li key={character}>
+                <span>{character}</span>
+                <span className="muted">{count} {count === 1 ? "kohtaus" : "kohtausta"}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </div>
   )
 }
