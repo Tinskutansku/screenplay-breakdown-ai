@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 import main
 
 client = TestClient(main.app)
+
+EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public" / "esimerkit"
 
 
 def test_parse_script_rejects_empty_text():
@@ -70,10 +75,26 @@ def test_upload_script_accepts_valid_txt():
     assert len(response.json()) == 1
 
 
-def test_get_scenes_returns_200():
-    response = client.get("/scenes")
+def test_health_returns_ok():
+    response = client.get("/health")
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.parametrize("filename", ["viimeinen-juna.txt", "viimeinen-juna.fdx"])
+def test_bundled_example_scripts_parse_end_to_end(filename):
+    """The example screenplays shipped with the demo UI must always parse
+    into the same six scenes, whichever format is uploaded."""
+
+    path = EXAMPLES_DIR / filename
+    response = client.post("/upload-script", files={"file": (filename, path.read_bytes())})
+
+    assert response.status_code == 200
+    scenes = response.json()
+    assert len(scenes) == 6
+    assert scenes[2]["location"] == "ASEMARAVINTOLA"
+    assert scenes[3]["cast_members"] == ["Konduktööri", "Juho"]
+    assert scenes[4]["int_ext"] == "INT/EXT"
 
 
 def test_unexpected_internal_error_returns_json_detail(monkeypatch):

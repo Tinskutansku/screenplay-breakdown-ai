@@ -33,6 +33,28 @@ def test_heading_int_ext_combo():
     assert time_of_day == "ILTA"
 
 
+def test_heading_int_inside_location_name_is_kept():
+    # Regression: the INT marker used to be removed from anywhere in the
+    # heading, turning "ASEMARAVINTOLA" into "ASEMARAVOLA".
+    int_ext, location, time_of_day = parse_scene_heading("INT. ASEMARAVINTOLA - PÄIVÄ")
+    assert int_ext == "INT"
+    assert location == "ASEMARAVINTOLA"
+    assert time_of_day == "PÄIVÄ"
+
+
+def test_heading_with_sub_location_takes_time_from_last_part():
+    int_ext, location, time_of_day = parse_scene_heading("INT. ANNAN KOTI - KEITTIÖ - AAMU")
+    assert int_ext == "INT"
+    assert location == "ANNAN KOTI - KEITTIÖ"
+    assert time_of_day == "AAMU"
+
+
+def test_heading_ext_location_starting_with_ext_letters():
+    int_ext, location, _ = parse_scene_heading("EXT. EXTREME-PUISTO - ILTA")
+    assert int_ext == "EXT"
+    assert location == "EXTREME-PUISTO"
+
+
 def test_heading_en_dash_is_normalized():
     int_ext, location, time_of_day = parse_scene_heading("INT. KIRJASTO – YO")
     assert int_ext == "INT"
@@ -82,6 +104,14 @@ def test_extract_character_names_deduplicates():
     assert extract_character_names_from_text(text) == ["Anna"]
 
 
+def test_extract_character_names_skips_sentence_initial_nouns_when_cues_known():
+    text = "Kolahdus kuuluu. Hiljaisuus. Anna katsoo ovea, jonka takana Juho seisoo."
+    names = extract_character_names_from_text(text, known_names={"Anna"})
+    # "Anna" opens a sentence but is a known dialogue cue; "Juho" is
+    # mid-sentence so counts even without a cue.
+    assert names == ["Anna", "Juho"]
+
+
 # --- extract_scene_elements ------------------------------------------------
 
 def test_extract_scene_elements_sfx_vfx():
@@ -104,6 +134,12 @@ def test_extract_scene_elements_background_actors_finnish_spelling():
     description = "Taustalla on pari ekstraa ja vakijoukko."
     elements = extract_scene_elements(description)
     assert "ekstra" in elements["background_actors"]
+
+
+def test_extract_scene_elements_shows_base_form_not_stem():
+    elements = extract_scene_elements("Väkijoukko odottaa. Hiukset ovat märät.")
+    assert elements["background_actors"] == ["väkijoukko"]
+    assert elements["makeup_hair"] == ["hiukset"]
 
 
 def test_extract_scene_elements_empty_description_returns_empty_lists():

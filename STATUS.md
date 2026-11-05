@@ -1,44 +1,25 @@
-# Film AI Breakdown – nykytila ja seuraavat askeleet
+# Screenplay Breakdown – nykytila ja kehitysloki
 
-Tarkoitus: yksi paikka josta näkee mikä oikeasti toimii, mikä on vain näytöstä, ja missä järjestyksessä kannattaa jatkaa. Ei vaadi uudelleenkirjoitusta — perusrakenne (FastAPI + React, routers/services/models-jako) on ihan toimiva.
+Projekti on päätetty valmiiksi demoksi (ks. `docs/adr/0005-finish-as-parser-demo.md`). Alla ensin nykytila, sen jälkeen kehitysloki aikajärjestyksessä.
 
-## Toimii jo oikeasti
+## Nykytila (2026-11-05)
 
-- FastAPI-backend, reitit `/scenes`, `/parse-script`, `/upload-script`
-- `.txt`- ja `.fdx`-käsikirjoitusten parsinta: kohtauksen numero, INT/EXT, sijainti, aika
-- React-frontend: kohtaustaulukko, haku, avaa/sulje kaikki, tilastonäkymä (uniikit sijainnit/hahmot, esiintymismäärät)
-- Salasanan hashays/tarkistus ja JWT access/refresh-tokenit (`services/security.py`) - toimivat täysin ilman tietokantaa jo nyt
-- `/auth/me` ja `get_current_user_id`-riippuvuus tarkistavat Bearer-tokenin oikein (allekirjoitus, vanhentuminen, access vs. refresh -tyyppi)
-- `SQL/schema.sql` kattaa nyt tuotannon aikataulutuksen (script-revisiot, joustava stripboard, call sheetit), oikean maailman kuvauspaikkojen linkityksen (`shooting_locations`) sekä cast-numeroinnin, agentin yhteystiedot ja jaetut call-ajat (ks. ADR-0004) - validoitu oikealla Postgres-kieliopilla (`pglast`), ei vielä ajettu oikeaa tietokantaa vastaan
+Kaikki sovelluksessa näkyvä toimii oikeasti, mitään puolivalmista reittiä ei ole jäljellä.
 
-## Näyttää valmiilta mutta on stub
+- FastAPI-backend, reitit `/parse-script`, `/upload-script` ja `/health`
+- `.txt`- ja `.fdx`-käsikirjoitusten parsinta: kohtaukset, INT/EXT, paikka alipaikkoineen, ajankohta, hahmot, sääntöpohjaiset tuotantoelementit
+- React-frontend: esimerkkikäsikirjoitus, kohtaustaulukko stripboard-väreillä, haku, tilastot
+- Yksi Docker-image, jossa FastAPI tarjoilee myös buildatun frontendin; `render.yaml` julkaisua varten
+- 39 backend-testiä, frontendin `tsc` ja `eslint` puhtaita
 
-- `GET /scenes` palauttaa aina saman yhden kovakoodatun esimerkkikohtauksen — mitään ei oikeasti tallenneta
-- `SQL/schema.sql` on olemassa ja kattava, mutta **mikään backend-koodi ei koske siihen** — tietokantaa ei ole kytketty ollenkaan
-- `/auth/register` ja `/auth/login` palauttavat tarkoituksella HTTP 501 ("ei vielä kytketty") - looginen puoli (validointi, hashays, tokenit) on valmis, tietokantaosuus puuttuu
-- `/auth/google/login` ja `/auth/google/callback` ovat vasta runkoja - vaativat oikean Google OAuth -asiakkaan (client id/secret Google Cloud Consolesta)
-- `Scene`-mallissa `props`, `set_dressing` ja `notes` jäävät yhä aina tyhjiksi (ei luotettavaa tekstisignaalia ilman oikeaa NLP/AI-poimintaa) — loput kentät saavat kevyen sääntöpohjaisen arvauksen
+Tietoiset rajaukset:
 
-## Karkeat kohdat (yhä auki)
+- `props`, `set_dressing` ja `notes` jäävät tyhjiksi, koska sääntöpohjainen poiminta ei tunnista niitä luotettavasti
+- Avainsanapoiminnan kattavuus on rajallinen eikä Figma-UI:n "Music/Playback"-kategoriaa tunnisteta
+- Hahmo, joka ei koskaan puhu ja mainitaan vain virkkeen alussa, jää tunnistamatta (hinta siitä, ettei virkkeen alun substantiiveja tulkita hahmoiksi)
+- Tietokantaskeemaa (`SQL/schema.sql`) ja autentikointia ei ole kytketty. Autentikoinnin toteutus testeineen on haarassa `auth-groundwork`.
 
-- `props`, `set_dressing`, `notes` -kentät jäävät tyhjiksi — vaatisivat oikean AI-pohjaisen poiminnan tai käyttäjän manuaalisen täydennyksen UI:ssa
-- Sääntöpohjainen avainsanapoiminta (sound/vehicles/stunts/wardrobe/makeup_hair/background_actors) on väistämättä epätarkka: kattavuus rajallinen eikä kaikkia tapauksia voi kattaa avainsanalistalla
-- Mitään reittiä ei ole vielä suojattu `get_current_user`-riippuvuudella - `/scenes`, `/parse-script`, `/upload-script` ovat yhä avoimia. Tämä on tarkoituksellista niin kauan kuin DB ei ole kytketty (frontend ei vielä lähetä tokeneita) - suojaus tulee osana DB-integraatiota.
-- `SQL/schema.sql` on validoitu vain syntaktisesti (pglast) - ei ole ajettu oikeaa Postgresia vastaan, koska tässä ympäristössä ei ole Postgresia saatavilla eikä DB ole vielä kytketty projektiin
-- Figma-UI:ssa on "Music/Playback"-elementtikategoria, jota parserin `scene_elements`-poiminta ei vielä tunnista (skeema tukee sitä jo, koska `element_type` on vapaata tekstiä - kyse on vain parser_service.py:n avainsanalistan puutteesta)
-
-## Ehdotettu järjestys
-
-1. Siivoa koodi — tehty
-2. Paranna hahmontunnistusta, täytä tyhjät kentät, lisää testit ja virheenkäsittely — tehty
-3. Auth-arkkitehtuuri ennen tietokantaa: ADR + salasanahashays + JWT + skeeman auth-taulut — tehty, ks. `docs/adr/0001-authentication-and-authorization.md`
-4. Tuotannon aikataulutuksen datamalli (script-revisiot, joustava stripboard, call sheetit) — tehty, ks. `docs/adr/0002-production-scheduling-data-model.md`
-5. Oikean maailman kuvauspaikkojen linkitys (shooting_locations) — tehty, ks. `docs/adr/0003-real-world-shooting-locations.md`
-6. Figma-UI:n pohjalta löydetyt skeemapuutteet (cast-numerointi, agentin yhteystiedot, jaetut call-ajat, osastokohtaiset call sheet -huomiot) — tehty, ks. `docs/adr/0004-call-sheet-and-cast-ui-gaps.md`
-7. Kytke tietokanta - seuraava askel. Sisältää: skeeman ajaminen oikeaa Postgresia vastaan ensimmäistä kertaa, oikeat DB-kutsut /auth/register + /auth/login + /auth/refresh -reitteihin, get_current_user-riippuvuuden täydentäminen, project_members-pohjainen omistajuustarkistus jokaiseen reittiin
-8. Google OAuth -asiakkaan rekisteröinti Google Cloud Consolessa ja oikeat tunnukset `.env`-tiedostoon
-9. Sähköpostipalvelun valinta (Resend/Postmark/SendGrid) sähköpostivahvistusta ja salasanan resetointia varten
-10. Myöhemmin: oikea AI/NLP-pohjainen poiminta props/set_dressing/notes-kentille (sääntöpohjainen ei riitä näihin)
+## Kehitysloki
 
 ## Siivous 2026-07-06
 
@@ -107,4 +88,18 @@ Päätös dokumentoitu: `docs/adr/0004-call-sheet-and-cast-ui-gaps.md`. Tanja ol
 - Ei skeemamuutosta, mutta huomioitu jatkoa varten: Figma-UI:ssa on myös "Music/Playback"-elementtikategoria, jota parserin avainsanapoiminta ei vielä tunnista - `scene_elements.element_type` on jo vapaata tekstiä joten skeema tukee sitä valmiiksi, kyse on vain `parser_service.py`:n avainsanalistan laajentamisesta myöhemmin.
 - Varmistettu: skeema jäsentyy virheettä `pglast`:lla (45 SQL-lausetta, 21 taulua), FK-järjestys tarkistettu koko skeeman läpi.
 
-Päivitä tätä tiedostoa sitä mukaa kun kohtia ratkeaa, niin kokonaiskuva pysyy hallussa ilman että pitää lukea koko koodikanta uudelleen joka kerta.
+## Viimeistely valmiiksi demoksi 2026-11-05
+
+Päätös dokumentoitu: `docs/adr/0005-finish-as-parser-demo.md`.
+
+- Poistettu keskeneräiset osat: auth-reitit (501), Google OAuth -rungot, kovakoodattu `GET /scenes`, `config.py`, `dependencies.py`, `.env.example`. Autentikoinnin toteutus säilyy haarassa `auth-groundwork`.
+- Korjattu: puhtaalta pöydältä asennettuna 4 testiä kaatui, koska lukitsematon `bcrypt` 5.x ei toimi `passlib` 1.7.4:n kanssa. Riippuvuus poistui auth-koodin mukana.
+- Parserin bugikorjaukset (esimerkkikäsikirjoitus paljasti ne):
+  - INT/EXT-merkintä poistettiin mistä tahansa otsikon kohdasta, joten "ASEMARAVINTOLA" muuttui muotoon "ASEMARAVOLA". Nyt merkintä poistetaan vain otsikon alusta.
+  - Kolmiosaisessa otsikossa ("ANNAN KOTI - KEITTIÖ - AAMU") ajankohdaksi tuli "KEITTIÖ". Nyt ajankohta on aina viimeinen osa ja muut osat ovat paikkaa.
+  - Toimintatekstin virkkeen alun substantiivit ("Kolahdus", "Hiljaisuus", "Juna") päätyivät hahmoiksi. Nyt kohtaukset viimeistellään vasta koko käsikirjoituksen luvun jälkeen, ja virkkeen alun sana hyväksytään hahmoksi vain, jos se on jonkin repliikin vetäjä.
+  - Avainsanavartalot näkyivät käyttöliittymässä sellaisenaan ("väkijoukk", "hiukse"). Nyt niille näytetään perusmuoto.
+- Uusi esimerkkikäsikirjoitus `frontend/public/esimerkit/` (.txt + .fdx) ja testi, joka purkaa molemmat.
+- Frontend: suomenkieliset tekstit, esimerkki yhdellä napilla, stripboard-värikoodit, tuotantoelementit ryhmiteltyinä, näppäimistökäytettävät rivit, mobiiliasettelu, fontit paketoitu sovellukseen (ei ulkoisia pyyntöjä). API-osoitteet suhteellisia; kehityksessä Vite välittää ne backendille.
+- Julkaisu: `Dockerfile` (frontend buildataan ja FastAPI tarjoilee sen), `render.yaml`, `/health`. CORS rajattu kehityspalvelimen osoitteisiin.
+- Varmistettu: 39 testiä läpi, `tsc` ja `eslint` puhtaita, sovellus ajettu tuotantotilassa (FastAPI + buildattu frontend) ja käyty läpi selaimessa työpöytä- ja mobiilileveydellä. Docker-imagea ei voitu rakentaa tässä ympäristössä (Docker Hub estetty).

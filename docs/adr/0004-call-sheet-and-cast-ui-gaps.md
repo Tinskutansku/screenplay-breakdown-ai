@@ -41,8 +41,8 @@ For department notes, the alternative was keeping `general_notes` as one blob an
 
 ## Action items
 
-1. [ ] Add `characters.cast_number` (nullable, partial unique index per project)
-2. [ ] Add `contacts.agent_name`, `contacts.agent_phone`, `contacts.agent_email`
-3. [ ] Replace `call_sheet_entries.call_time` with `makeup_hair_time`, `on_set_time`, `unit_call_time`
-4. [ ] Add `call_sheet_department_notes` table
+1. [x] Add `characters.cast_number` (nullable, partial unique index per project)
+2. [x] Add `contacts.agent_name`, `contacts.agent_phone`, `contacts.agent_email`
+3. [x] Replace `call_sheet_entries.call_time` with `makeup_hair_time`, `on_set_time`, `unit_call_time`
+4. [x] Add `call_sheet_department_notes` table
 5. [ ] When building the call sheet UI: decide whether `department` becomes a fixed lookup list or stays free text, same open question ADR-0002 already flagged for call sheet departments generally

@@ -50,3 +50,35 @@ export const getSceneStatistics = (scenes: Scene[]) => {
     sortedCharacterAppearances
   }
 }
+type ListKey = {
+  [K in keyof Scene]: Scene[K] extends string[] ? K : never
+}[keyof Scene]
+
+// Breakdown categories shown in a scene's detail view, in the order a
+// breakdown sheet usually lists them. Cast is already in the table row.
+// Props, set dressing and notes stay empty from the rule-based parser (see
+// STATUS.md) but are kept here so they show up if they're ever filled.
+export const ELEMENT_CATEGORIES: { key: ListKey; label: string }[] = [
+  { key: "background_actors", label: "Taustanäyttelijät" },
+  { key: "wardrobe", label: "Puvustus" },
+  { key: "makeup_hair", label: "Maski" },
+  { key: "props", label: "Rekvisiitta" },
+  { key: "set_dressing", label: "Lavastus" },
+  { key: "vehicles", label: "Ajoneuvot" },
+  { key: "stunts", label: "Stuntit" },
+  { key: "sound", label: "Ääni" },
+  { key: "sfx", label: "SFX" },
+  { key: "vfx", label: "VFX" },
+  { key: "notes", label: "Huomiot" }
+]
+
+const NIGHT_WORDS = ["YÖ", "YO", "ILTA", "NIGHT", "EVENING", "DUSK"]
+
+// Classic stripboard colour coding: white = INT day, yellow = EXT day,
+// blue = INT night, green = EXT night.
+export const stripClassName = (scene: Scene): string => {
+  const time = scene.time_of_day.toUpperCase()
+  const isNight = NIGHT_WORDS.some((word) => time.includes(word))
+  const isExterior = scene.int_ext.startsWith("EXT") || scene.int_ext === "INT/EXT"
+  return `strip-${isExterior ? "ext" : "int"}-${isNight ? "night" : "day"}`
+}

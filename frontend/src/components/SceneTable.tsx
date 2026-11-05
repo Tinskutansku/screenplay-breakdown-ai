@@ -1,5 +1,4 @@
 import type { Scene } from "../types/scene"
-import { tableStyle, cellStyle, emptyCellStyle } from "../styles/sceneStyles"
 import SceneRow from "./SceneRow"
 
 type SceneTableProps = {
@@ -8,43 +7,41 @@ type SceneTableProps = {
   onToggleScene: (sceneNumber: string) => void
 }
 
-function SceneTable({
-  scenes,
-  expandedSceneIds,
-  onToggleScene
-}: SceneTableProps) {
+function SceneTable({ scenes, expandedSceneIds, onToggleScene }: SceneTableProps) {
   return (
-    <table style={tableStyle}>
-      <thead>
-        <tr>
-          <th style={cellStyle}>Scene</th>
-          <th style={cellStyle}>INT/EXT</th>
-          <th style={cellStyle}>Location</th>
-          <th style={cellStyle}>Time</th>
-          <th style={cellStyle}>Description</th>
-          <th style={cellStyle}>Cast</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {scenes.length === 0 ? (
+    <div className="table-wrap">
+      <table className="scene-table">
+        <thead>
           <tr>
-            <td colSpan={6} style={emptyCellStyle}>
-              No scenes found.
-            </td>
+            <th scope="col">Nro</th>
+            <th scope="col">INT/EXT</th>
+            <th scope="col">Paikka</th>
+            <th scope="col">Aika</th>
+            <th scope="col" className="col-description">Kuvaus</th>
+            <th scope="col">Hahmot</th>
           </tr>
-        ) : (
-          scenes.map((scene) => (
-            <SceneRow
-              key={scene.scene_number}
-              scene={scene}
-              isExpanded={expandedSceneIds.includes(scene.scene_number)}
-              onToggle={onToggleScene}
-            />
-          ))
-        )}
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody>
+          {scenes.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty-cell">
+                Ei kohtauksia. Tarkista, että kohtausotsikot alkavat INT- tai EXT-merkinnällä.
+              </td>
+            </tr>
+          ) : (
+            scenes.map((scene) => (
+              <SceneRow
+                key={scene.scene_number}
+                scene={scene}
+                isExpanded={expandedSceneIds.includes(scene.scene_number)}
+                onToggle={onToggleScene}
+              />
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

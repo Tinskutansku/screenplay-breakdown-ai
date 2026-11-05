@@ -41,27 +41,54 @@ TRANSITION_CUES = {
 }
 
 
-def extract_character_names_from_text(text: str) -> List[str]:
+_SENTENCE_BOUNDARY_CHARS = ".!?:;)\"'”-"
+
+
+def _is_sentence_initial(text: str, start: int) -> bool:
+    """True if the word starting at `start` opens a sentence (or the whole
+    text). Finnish capitalizes every sentence-initial word, so a capital
+    letter there says nothing about whether the word is a name."""
+
+    preceding = text[:start].rstrip()
+    return not preceding or preceding[-1] in _SENTENCE_BOUNDARY_CHARS
+
+
+def extract_character_names_from_text(
+    text: str, known_names: set[str] | None = None
+) -> List[str]:
     """Fallback heuristic: pick up Title-Case words from prose. Only catches
     names mentioned in action/description text, not names that only ever
     appear as a dialogue cue (those are handled separately via
-    combine_cast_members / character_cues)."""
+    combine_cast_members / character_cues).
 
-    matches = re.findall(
-        r"\b[A-ZÅÄÖ][a-zåäö]+(?:\s+[A-ZÅÄÖ][a-zåäö]+)?\b",
-        text
-    )
+    When `known_names` (every dialogue cue in the whole script) is given, a
+    capitalized word at the start of a sentence only counts if it is one of
+    those known names. Mid-sentence capitals are still accepted as-is, since
+    there they are almost always proper nouns. This removes the most common
+    false positive in Finnish action lines ("Kolahdus kuuluu." -> "Kolahdus"
+    as a character), at the cost of missing a non-speaking character who is
+    only ever mentioned at the start of a sentence."""
+
+    pattern = re.compile(r"\b[A-ZÅÄÖ][a-zåäö]+(?:\s+[A-ZÅÄÖ][a-zåäö]+)?\b")
 
     unique_names = []
     seen = set()
 
-    for match in matches:
-        if match in IGNORED_WORDS:
+    for match in pattern.finditer(text):
+        name = match.group(0)
+
+        if name in IGNORED_WORDS or name in seen:
             continue
 
-        if match not in seen:
-            seen.add(match)
-            unique_names.append(match)
+        if (
+            known_names is not None
+            and name not in known_names
+            and _is_sentence_initial(text, match.start())
+        ):
+            continue
+
+        seen.add(name)
+        unique_names.append(name)
 
     return unique_names
 
@@ -99,11 +126,13 @@ def is_character_cue_line(line: str) -> bool:
     return True
 
 
-def combine_cast_members(character_cues: List[str], description: str) -> List[str]:
+def combine_cast_members(
+    character_cues: List[str], description: str, known_names: set[str] | None = None
+) -> List[str]:
     """Merge reliably-identified dialogue cues with the weaker prose-based
     heuristic, cues first since they're the more trustworthy signal."""
 
-    heuristic_names = extract_character_names_from_text(description)
+    heuristic_names = extract_character_names_from_text(description, known_names)
 
     combined = []
     seen = set()
@@ -168,6 +197,27 @@ SFX_VFX_PATTERN = re.compile(
 )
 
 
+# Several Finnish keywords are deliberately stems so that prefix matching
+# catches every inflected form ("väkijoukk" -> "väkijoukko", "väkijoukossa").
+# Stems are fine for matching but look like typos in the UI, so each one
+# maps to the base form shown to the user.
+KEYWORD_DISPLAY_FORMS = {
+    "moottoripyör": "moottoripyörä",
+    "polkupyör": "polkupyörä",
+    "pyöräl": "polkupyörä",
+    "helikopter": "helikopteri",
+    "kaskadöör": "kaskadööri",
+    "stuntt": "stuntti",
+    "tappel": "tappelu",
+    "taistel": "taistelu",
+    "taustanäyttelij": "taustanäyttelijät",
+    "väkijoukk": "väkijoukko",
+    "ohikulkij": "ohikulkijat",
+    "hiukse": "hiukset",
+    "peruukk": "peruukki",
+}
+
+
 def _find_keyword_matches(text: str, keywords: List[str]) -> List[str]:
     """Match each keyword as a word *prefix* (word boundary before it, no
     boundary required after). This still catches Finnish inflected forms,
@@ -182,8 +232,9 @@ def _find_keyword_matches(text: str, keywords: List[str]) -> List[str]:
 
     for keyword in keywords:
         pattern = r"\b" + re.escape(keyword)
-        if keyword not in found and re.search(pattern, lowered):
-            found.append(keyword)
+        label = KEYWORD_DISPLAY_FORMS.get(keyword, keyword)
+        if label not in found and re.search(pattern, lowered):
+            found.append(label)
 
     return found
 
@@ -240,9 +291,15 @@ def create_empty_scene(scene_number: int, int_ext: str, location: str, time_of_d
     )
 
 
-def finalize_scene(scene: Scene, character_cues: List[str] | None = None) -> Scene:
+def finalize_scene(
+    scene: Scene,
+    character_cues: List[str] | None = None,
+    known_names: set[str] | None = None,
+) -> Scene:
     scene.description = scene.description.strip()
-    scene.cast_members = combine_cast_members(character_cues or [], scene.description)
+    scene.cast_members = combine_cast_members(
+        character_cues or [], scene.description, known_names
+    )
 
     elements = extract_scene_elements(scene.description)
     scene.sound = elements["sound"]
@@ -265,20 +322,27 @@ def parse_scene_heading(raw_heading: str) -> tuple[str, str, str]:
         raw_heading.replace("–", "-").replace("—", "-").replace(".", "")
     )
 
-    parts = normalized_heading.split(" - ")
+    parts = [part.strip() for part in normalized_heading.split(" - ")]
 
-    location_part = parts[0].strip().upper()
-    time_part = parts[1].strip() if len(parts) > 1 else ""
+    # "INT. KITCHEN - MORNING" has two parts; "INT. ANNA'S HOUSE - KITCHEN -
+    # MORNING" has a sub-location in the middle. The time of day is always
+    # the last part, everything before it is the location.
+    if len(parts) > 1:
+        location_part = " - ".join(parts[:-1]).upper()
+        time_part = parts[-1]
+    else:
+        location_part = parts[0].upper()
+        time_part = ""
 
-    if "INT/EXT" in location_part:
-        int_ext = "INT/EXT"
-        location = location_part.replace("INT/EXT", "").strip()
-    elif "INT" in location_part:
-        int_ext = "INT"
-        location = location_part.replace("INT", "").strip()
-    elif "EXT" in location_part:
-        int_ext = "EXT"
-        location = location_part.replace("EXT", "").strip()
+    # Only strip the INT/EXT marker from the *start* of the heading - a plain
+    # str.replace("INT", "") also removed it from inside location names
+    # ("ASEMARAVINTOLA" -> "ASEMARAVOLA").
+    prefix_match = re.match(r"^(INT\s*/\s*EXT|I\s*/\s*E|INT|EXT)\b\s*", location_part)
+
+    if prefix_match:
+        marker = re.sub(r"\s", "", prefix_match.group(1))
+        int_ext = "INT/EXT" if "/" in marker else marker
+        location = location_part[prefix_match.end():].strip()
     else:
         int_ext = ""
         location = location_part.strip()
@@ -286,10 +350,19 @@ def parse_scene_heading(raw_heading: str) -> tuple[str, str, str]:
     return int_ext, location, time_part
 
 
+def _finalize_all(pending: List[tuple[Scene, List[str]]]) -> List[Scene]:
+    """Finalize scenes only once the whole script has been read, so that the
+    cast heuristic can check prose names against every dialogue cue in the
+    script, not just the ones seen so far."""
+
+    known_names = {cue for _, cues in pending for cue in cues}
+    return [finalize_scene(scene, cues, known_names) for scene, cues in pending]
+
+
 def parse_screenplay(text: str) -> List[Scene]:
     lines = text.split("\n")
 
-    scenes: List[Scene] = []
+    scenes: List[tuple[Scene, List[str]]] = []
     current_scene: Scene | None = None
     current_scene_character_cues: List[str] = []
     scene_counter = 1
@@ -319,7 +392,7 @@ def parse_screenplay(text: str) -> List[Scene]:
 
         if scene_heading_pattern.match(line):
             if current_scene:
-                scenes.append(finalize_scene(current_scene, current_scene_character_cues))
+                scenes.append((current_scene, current_scene_character_cues))
 
             int_ext, location, time_part = parse_scene_heading(line)
 
@@ -350,15 +423,15 @@ def parse_screenplay(text: str) -> List[Scene]:
                 current_scene.description += line
 
     if current_scene:
-        scenes.append(finalize_scene(current_scene, current_scene_character_cues))
+        scenes.append((current_scene, current_scene_character_cues))
 
-    return scenes
+    return _finalize_all(scenes)
 
 
 def parse_fdx(content: bytes) -> List[Scene]:
     root = ET.fromstring(content)
 
-    scenes: List[Scene] = []
+    scenes: List[tuple[Scene, List[str]]] = []
     current_scene: Scene | None = None
     current_scene_character_cues: List[str] = []
     scene_counter = 1
@@ -380,7 +453,7 @@ def parse_fdx(content: bytes) -> List[Scene]:
 
         if paragraph_type == "Scene Heading":
             if current_scene:
-                scenes.append(finalize_scene(current_scene, current_scene_character_cues))
+                scenes.append((current_scene, current_scene_character_cues))
 
             int_ext, location, time_part = parse_scene_heading(paragraph_text)
 
@@ -407,6 +480,6 @@ def parse_fdx(content: bytes) -> List[Scene]:
                 current_scene.description += paragraph_text
 
     if current_scene:
-        scenes.append(finalize_scene(current_scene, current_scene_character_cues))
+        scenes.append((current_scene, current_scene_character_cues))
 
-    return scenes
+    return _finalize_all(scenes)
