@@ -64,7 +64,7 @@ Alkuperäinen tavoite oli monen käyttäjän tuotantotyökalu, jossa käsikirjoi
 
 - **Tietokantaskeema.** [`SQL/schema.sql`](SQL/schema.sql) sisältää 21 taulua (script-revisiot väreineen, joustava stripboard, call sheetit jaettuine call-aikoineen, oikeat kuvauspaikat, cast-numerointi ja agenttien yhteystiedot). Skeema on validoitu PostgreSQL-kielioppia vasten.
 - **Arkkitehtuuripäätökset.** [`docs/adr/`](docs/adr/) perustelee jokaisen datamallin ratkaisun ja hylätyt vaihtoehdot. UI suunniteltiin Figmassa ja käytiin skeemaa vasten läpi, jolloin löytyi neljä puuttuvaa kenttää (ADR-0004).
-- **Autentikointi.** JWT access/refresh-tokenit, bcrypt-salasanat ja niiden 21 testiä toteutettiin, mutta poistettiin päähaarasta, koska tietokantaa ei kytketty. Toteutus löytyy tagista [`auth-groundwork`](https://github.com/Tinskutansku/screenplay-breakdown-ai/tree/auth-groundwork) ja päätös [ADR-0001](docs/adr/0001-authentication-and-authorization.md):stä.
+- **Autentikointi.** JWT access/refresh-tokenit, bcrypt-salasanat ja niiden 21 testiä toteutettiin, mutta poistettiin päähaarasta, koska tietokantaa ei kytketty. Toteutus löytyy haarasta [`auth-groundwork`](https://github.com/Tinskutansku/screenplay-breakdown-ai/tree/auth-groundwork) ja päätös [ADR-0001](docs/adr/0001-authentication-and-authorization.md):stä.
 
 Miksi projekti päätettiin tähän, on kirjattu [ADR-0005](docs/adr/0005-finish-as-parser-demo.md):een. Kehitysloki löytyy [STATUS.md](STATUS.md):stä.
 

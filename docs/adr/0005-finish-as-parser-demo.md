@@ -19,7 +19,7 @@ A visitor (for example a recruiter) opening the repository or a running instance
 
 Ship what works as a finished, stateless demo, and remove everything that only pretends to work.
 
-1. Remove the auth router, auth models, security service, `dependencies.py`, `config.py`, `.env.example` and their tests. The full auth implementation stays reachable at git tag `auth-groundwork` and is documented in ADR-0001.
+1. Remove the auth router, auth models, security service, `dependencies.py`, `config.py`, `.env.example` and their tests. The full auth implementation stays reachable on the git branch `auth-groundwork` and is documented in ADR-0001.
 2. Remove the hard-coded `GET /scenes`. The UI starts empty and offers a bundled example screenplay (`frontend/public/esimerkit/`) in both `.txt` and `.fdx` form.
 3. Keep `SQL/schema.sql` and ADR-0001 to ADR-0004 as design documentation of how the product would have grown, clearly labelled as not wired.
 4. Deploy as one container: FastAPI serves both the API and the built React app from the same origin (`Dockerfile`, `render.yaml`), so no CORS, environment variables or second service are needed in production.
@@ -36,5 +36,5 @@ Ship what works as a finished, stateless demo, and remove everything that only p
 
 - Every endpoint and screen in the running app does what it appears to do. 39 backend tests, all green on a fresh install.
 - Dependencies shrink to FastAPI, Pydantic, python-multipart and Uvicorn. No secrets are needed to run or deploy.
-- The authentication work is no longer on `main`. It is preserved, tested, at tag `auth-groundwork`.
+- The authentication work is no longer on `main`. It is preserved, tested, on branch `auth-groundwork`.
 - The schema in `SQL/schema.sql` has never been run against a real PostgreSQL instance and now never will be as part of this project.

@@ -17,7 +17,7 @@ Tietoiset rajaukset:
 - `props`, `set_dressing` ja `notes` jäävät tyhjiksi, koska sääntöpohjainen poiminta ei tunnista niitä luotettavasti
 - Avainsanapoiminnan kattavuus on rajallinen eikä Figma-UI:n "Music/Playback"-kategoriaa tunnisteta
 - Hahmo, joka ei koskaan puhu ja mainitaan vain virkkeen alussa, jää tunnistamatta (hinta siitä, ettei virkkeen alun substantiiveja tulkita hahmoiksi)
-- Tietokantaskeemaa (`SQL/schema.sql`) ja autentikointia ei ole kytketty. Autentikoinnin toteutus testeineen on tagissa `auth-groundwork`.
+- Tietokantaskeemaa (`SQL/schema.sql`) ja autentikointia ei ole kytketty. Autentikoinnin toteutus testeineen on haarassa `auth-groundwork`.
 
 ## Kehitysloki
 
@@ -92,7 +92,7 @@ Päätös dokumentoitu: `docs/adr/0004-call-sheet-and-cast-ui-gaps.md`. Tanja ol
 
 Päätös dokumentoitu: `docs/adr/0005-finish-as-parser-demo.md`.
 
-- Poistettu keskeneräiset osat: auth-reitit (501), Google OAuth -rungot, kovakoodattu `GET /scenes`, `config.py`, `dependencies.py`, `.env.example`. Autentikoinnin toteutus säilyy tagissa `auth-groundwork`.
+- Poistettu keskeneräiset osat: auth-reitit (501), Google OAuth -rungot, kovakoodattu `GET /scenes`, `config.py`, `dependencies.py`, `.env.example`. Autentikoinnin toteutus säilyy haarassa `auth-groundwork`.
 - Korjattu: puhtaalta pöydältä asennettuna 4 testiä kaatui, koska lukitsematon `bcrypt` 5.x ei toimi `passlib` 1.7.4:n kanssa. Riippuvuus poistui auth-koodin mukana.
 - Parserin bugikorjaukset (esimerkkikäsikirjoitus paljasti ne):
   - INT/EXT-merkintä poistettiin mistä tahansa otsikon kohdasta, joten "ASEMARAVINTOLA" muuttui muotoon "ASEMARAVOLA". Nyt merkintä poistetaan vain otsikon alusta.
